@@ -158,6 +158,9 @@ def test_sorgu_exact_limit_is_not_truncated(db):
         "LOAD httpfs",
         "SELECT 1; SELECT 2",
         "SELECT 1; DROP TABLE marts.dim_station",
+        "/* gizli */ DROP TABLE marts.dim_station",
+        "SELECT 1; -- yorum\nDROP TABLE marts.dim_station",
+        "SELECT 1 /* ; */; DROP TABLE marts.dim_station",
         "",
         "  -- only a comment\n",
     ],
@@ -174,6 +177,43 @@ def test_sorgu_rejects_non_single_select_before_execution(db, sql):
         )
 
 
+def test_sorgu_comment_inside_single_select_runs_safely(db):
+    result = load_server().sorgu("SELECT 1 AS x /* ; DROP TABLE marts.dim_station */")
+    assert result["satirlar"] == [[1]]
+    with duckdb.connect(str(db)) as con:
+        assert con.execute("SELECT count(*) FROM marts.dim_station").fetchone()[0] == 4
+
+
+@pytest.mark.parametrize(
+    "sql_template",
+    [
+        "SELECT * FROM read_text('{p}')",
+        "SELECT * FROM read_blob('{p}')",
+        "SELECT * FROM read_json('{p}')",
+        "SELECT * FROM read_parquet('{p}')",
+        "SELECT * FROM glob('{d}')",
+        "SELECT getenv('ULASIM_TEST_GIZLI')",
+        "SELECT * FROM read_csv('https://127.0.0.1:9/x.csv')",
+    ],
+)
+def test_sorgu_file_and_network_functions_are_blocked(
+    db, tmp_path, monkeypatch, sql_template
+):
+    secret = tmp_path / "secret.txt"
+    secret.write_text("GIZLI-DEGER-123", encoding="utf-8")
+    monkeypatch.setenv("ULASIM_TEST_GIZLI", "GIZLI-ORTAM-456")
+    sql = sql_template.format(
+        p=secret.as_posix().replace("'", "''"),
+        d=(tmp_path.as_posix() + "/*").replace("'", "''"),
+    )
+    result = load_server().sorgu(sql)
+    assert "hata" in result, (sql_template, result)
+    assert "satirlar" not in result
+    serialized = json.dumps(result, ensure_ascii=False)
+    assert "GIZLI-DEGER-123" not in serialized
+    assert "GIZLI-ORTAM-456" not in serialized
+
+
 def test_sorgu_external_file_access_is_disabled(db, tmp_path):
     csv = tmp_path / "secret.csv"
     csv.write_text("secret\n123\n", encoding="utf-8")
@@ -188,9 +228,17 @@ def test_sorgu_security_configuration(db):
     result = load_server().sorgu("""
         SELECT current_setting('access_mode'),
                current_setting('enable_external_access'),
-               current_setting('lock_configuration'), current_setting('threads')
+               current_setting('lock_configuration'), current_setting('threads'),
+               current_setting('memory_limit')
     """)
-    assert result["satirlar"] == [["read_only", False, True, 2]]
+    assert result["satirlar"] == [["read_only", False, True, 2, "2.0 GiB"]]
+
+
+@pytest.mark.parametrize("value", ["abc", "0", "-1", "inf", "nan"])
+def test_sorgu_invalid_timeout_setting_is_error(db, monkeypatch, value):
+    monkeypatch.setenv("ULASIM_SORGU_ZAMAN_ASIMI", value)
+    result = load_server().sorgu("SELECT 1")
+    assert "ULASIM_SORGU_ZAMAN_ASIMI" in result["hata"]
 
 
 def test_sorgu_timeout_interrupts_and_releases_connection(db, monkeypatch):

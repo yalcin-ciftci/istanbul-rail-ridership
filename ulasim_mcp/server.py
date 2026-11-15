@@ -15,6 +15,8 @@ from typing import Any
 import duckdb
 from mcp.server.mcpserver import MCPServer
 
+SORGU_BELLEK_SINIRI = "2GiB"
+
 UYARILAR = (
     (
         "passenger_count aynı kişiyi birden fazla sayabilir; yıllar arası "
@@ -52,6 +54,7 @@ def _with_connection(
                 "enable_external_access": False,
                 "lock_configuration": True,
                 "threads": 2,
+                "memory_limit": SORGU_BELLEK_SINIRI,
             },
         )
     except (duckdb.Error, OSError, ValueError) as exc:
