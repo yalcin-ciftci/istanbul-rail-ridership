@@ -66,7 +66,7 @@ The intermediate views are described in [_intermediate.yml](transform/models/int
 - **Group codes into physical complexes through a reviewed mapping seed.** The current mapping covers 371 codes → 253 groups, confirmed against the local database read-only. The seed supports human review; groups are a project mapping, not an IBB field ([seed](transform/seeds/station_group_map.csv), [M3](docs/M3.md)).
 - **Treat the source district field as unreliable.** District-based analysis needs additional validation; the MCP tool's `sema` warnings and the example agent repeat this caveat.
 
-Final build at M3: `dbt build` PASS=64, WARN=6, ERROR=0. The six warnings are the data-quality tests above, kept as warnings on purpose so the counts stay visible. Python: 124 tests pass after the pre-publication fixes and post-publication hardening ([M3 results](docs/M3.md#results-2026-11-15)). On every push, GitHub Actions runs Ruff and pytest on Ubuntu and Windows ([ci.yml](.github/workflows/ci.yml)); `dbt build` needs the downloaded data and is run locally.
+Final build at M3: `dbt build` PASS=64, WARN=6, ERROR=0. The six warnings are the data-quality tests above, kept as warnings on purpose so the counts stay visible. Python: 132 tests pass after the pre-publication fixes and post-publication hardening ([M3 results](docs/M3.md#results-2026-11-15)). On every push, GitHub Actions runs Ruff and pytest on Ubuntu and Windows ([ci.yml](.github/workflows/ci.yml)); `dbt build` needs the downloaded data and is run locally.
 
 ## Quickstart
 

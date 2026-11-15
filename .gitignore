@@ -9,6 +9,7 @@ wheels/
 # Virtual environments
 .venv
 .uv-cache/
+venv/
 
 # Veri ve yerel çıktılar (depoya girmez; kaynak İBB'den yeniden çekilir)
 data/
@@ -31,3 +32,4 @@ transform/logs/
 .env.*
 .mcp.json
 .claude/settings.local.json
+.claude/agents/

@@ -2,6 +2,27 @@ import json
 from datetime import datetime
 
 import duckdb
+import pytest
+import rail_station_daily
+
+
+@pytest.mark.parametrize(
+    "resource_id", ["../evil", "..\\evil", "a/b", ".", "", "x.jsonl", "-leading"]
+)
+def test_unsafe_resource_id_is_rejected_before_network(server, resource_id):
+    with pytest.raises(SystemExit) as exc:
+        server.run(resource_id)
+    assert exc.value.code == 2
+    assert server.requests == []
+    assert not list((server.root / "data").rglob("*.jsonl"))
+    assert not (server.root.parent / "evil.jsonl").exists()
+
+
+def test_default_resource_id_is_accepted():
+    assert (
+        rail_station_daily.resource_id_arg(rail_station_daily.DEFAULT_RESOURCE)
+        == rail_station_daily.DEFAULT_RESOURCE
+    )
 
 
 def test_paginated_success(server):

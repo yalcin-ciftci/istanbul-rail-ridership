@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import re
 import sys
 import time
 from datetime import UTC, datetime
@@ -15,6 +16,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 API_ROOT = "https://data.ibb.gov.tr/api/3/action/"
 PACKAGE = "rayli-sistemler-istasyon-bazli-yolcu-ve-yolculuk-sayilari"
 DEFAULT_RESOURCE = "cce8e138-686a-4b8d-bac0-c2a0ab294a6e"
+RESOURCE_ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}")
 API_COLUMNS = {
     "_id": "BIGINT",
     "transaction_year": "VARCHAR",
@@ -29,6 +31,14 @@ API_COLUMNS = {
     "passage_cnt": "VARCHAR",
     "passanger_cnt": "VARCHAR",
 }
+
+
+def resource_id_arg(value: str) -> str:
+    if not RESOURCE_ID_PATTERN.fullmatch(value):
+        raise argparse.ArgumentTypeError(
+            "resource id may contain only letters, digits, '-' and '_'"
+        )
+    return value
 
 
 def request_result(client, action, params, offset):
@@ -60,7 +70,7 @@ def request_result(client, action, params, offset):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--resource-id", default=DEFAULT_RESOURCE)
+    parser.add_argument("--resource-id", type=resource_id_arg, default=DEFAULT_RESOURCE)
     parser.add_argument("--db", type=Path, default=Path("data/ulasim.duckdb"))
     args = parser.parse_args()
     started = time.perf_counter()
