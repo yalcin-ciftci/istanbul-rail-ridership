@@ -79,11 +79,33 @@ def test_revised_suffix_order_and_separated_numbers(name, key):
         ("4 levent", "4 Levent"),
         ("ıhlamur", "Ihlamur"),
         ("istinye şişli", "İstinye Şişli"),
+        ("itü", "İTÜ"),
+        ("idtm", "İDTM"),
+        ("imes", "İMES"),
+        ("itü idtm imes istinye", "İTÜ İDTM İMES İstinye"),
     ],
 )
 def test_turkish_title_case(key, display):
     draft = load_draft()
     assert draft.title_case(key) == display
+
+
+def test_generated_acronym_groups_survive_rerun(tmp_path):
+    draft = load_draft()
+    db, output = tmp_path / "test.duckdb", tmp_path / "map.csv"
+    make_db(
+        db,
+        [("DTM-DTM", "İdtm"), ("IMS-IMS", "İMES"), ("ITU-ITU", "İTÜ Güney")],
+    )
+    draft.generate(db, output)
+    assert [row["station_group"] for row in read_rows(output)] == [
+        "İDTM",
+        "İMES",
+        "İTÜ",
+    ]
+    original = output.read_bytes()
+    assert draft.generate(db, output) == 0
+    assert output.read_bytes() == original
 
 
 def test_multiple_prefixes_flags_every_group_member(tmp_path):

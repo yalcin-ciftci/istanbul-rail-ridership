@@ -1,0 +1,61 @@
+version = 1
+
+[[metric]]
+id = "journey_count_estimated"
+role = "default"
+label_tr = "Analiz yolculuk sayısı"
+definition_tr = "Analiz varsayılanı: tüm toplamlar ve yıllar arası karşılaştırmalar için yolculuk (turnike geçişi) sayısı. Şüpheli 2022 günlerinde kaynak değer giriş satırı düzeyinde tam sayı bölmesiyle ikiye bölünür; diğer günlerde journey_count ile aynıdır."
+description_en = "Default measure for all analytical totals and comparisons across years. Sum of journeys with source counts divided by 2 using integer division per entrance row on suspect 2022 days; equals journey_count otherwise. The adjustment is a project estimate, not an official IBB figure."
+tables = ["fct_station_daily", "fct_line_daily", "fct_station_group_daily"]
+
+[[metric]]
+id = "journey_count"
+role = "source"
+label_tr = "Kaynak yolculuk sayısı (İBB)"
+definition_tr = "İBB kaynak yolculuk (turnike geçişi) değerlerinin toplamı; şüpheli günlerdeki kaynak değerleri korur. Kullanıcı kaynak sayıyı istediğinde veya tahminle yan yana gösterirken kullanılır."
+description_en = "Sum of source journey counts (turnstile passages), preserving suspect source values. Use when the user requests IBB source counts or to display them alongside journey_count_estimated."
+tables = ["fct_station_daily", "fct_line_daily", "fct_station_group_daily"]
+
+[[metric]]
+id = "passenger_count"
+role = "restricted"
+label_tr = "Kaynak yolcu sayımı"
+definition_tr = "Kaynak yolcu sayımlarının toplamı; aynı kişiyi birden fazla sayabilir, tekil kişi sayısı değildir ve yıllar arası karşılaştırmada kullanılmaz."
+description_en = "Sum of source passenger counts; may count the same person more than once. Not a count of unique people; do not use for comparisons across years."
+tables = ["fct_station_daily", "fct_line_daily", "fct_station_group_daily"]
+
+[[rule]]
+id = "default_metric"
+text_tr = "Analiz varsayılanı journey_count_estimated'dır; tüm toplamları ve yıllar arası karşılaştırmaları bu ölçüyle yap. Şüpheli 2022 günleri dışında journey_count ile aynıdır. journey_count kaynak değeri (İBB) olarak korunur; kullanıcı kaynak sayıyı isterse veya tahminle yan yana gösterirken kullan. Yolculuk, turnike geçişidir; kullandığın ölçünün ne olduğunu cevapta bir cümleyle söyle."
+
+[[rule]]
+id = "suspect_warning"
+text_tr = "2022-03-28 ile 2022-11-02 arasında kaynak journey_count değerleri iki katına çıkmış görünüyor. Sonuç aralığında has_suspect_journeys = true olan gün varsa bunun İBB'nin değil projenin tahmini olduğunu cevapta belirt; böyle bir gün yoksa tahmin uyarısı zorunlu değildir. Toplam alırken bu bayrağı da kontrol et."
+
+[[rule]]
+id = "transition_days"
+text_tr = "2022-10-31 ve 2022-11-01 şüpheli aralığın içindedir ama işaretli değildir; bu günlerde journey_count_estimated kaynak değerine eşittir. 2022 Ekim sonu–Kasım başını kapsayan cevaplarda bu geçiş günleri için dikkat notu ver."
+
+[[rule]]
+id = "passenger_not_people"
+text_tr = "passenger_count aynı kişiyi birden fazla sayabilir; tekil kişi sayısı değildir ve yıllar arası karşılaştırmada kullanılmaz."
+
+[[rule]]
+id = "station_group"
+text_tr = "İstasyon, fiziksel istasyon grubudur (kompleks); birden çok kod ve hat içerebilir. En kalabalık istasyonu gruba göre hesapla. İstasyon grupları gözden geçirilmiş bir eşleme tablosudur; İBB kaynak alanı değildir."
+
+[[rule]]
+id = "line_level"
+text_tr = "İstasyonu olmayan hat düzeyindeki satırlar yalnızca fct_line_daily içindedir; istasyon toplamlarının toplamı hat toplamına eşit olmayabilir."
+
+[[rule]]
+id = "district"
+text_tr = "Kaynaktaki ilçe alanı (district, districts) güvenilir değildir; ilçe bazlı sonuçları bu uyarıyla verin ve ek doğrulama gerektiğini belirtin."
+
+[[rule]]
+id = "weekend"
+text_tr = "Hafta sonu Cumartesi–Pazar olarak tanımlanır; resmî tatiller ayrılmadı. Hafta içi/sonu hesaplarında bu tanımı açık yaz."
+
+[[rule]]
+id = "source_license"
+text_tr = "Kaynak: İBB Açık Veri, İBB Açık Veri Lisansı (CC BY 4.0); kaynak belirtin."

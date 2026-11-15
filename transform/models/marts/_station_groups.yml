@@ -52,22 +52,20 @@ models:
       across member codes and lines. Groups are a reviewed mapping, not an IBB
       field, and flagged assignments are provisional. Codes without a group
       are excluded and counted by warn_station_group_missing. Passenger counts
-      may double count a person; use journey_count for comparisons across years.
-      Between 2022-03-28 and 2022-11-02 source journeys appear doubled; use
-      journey_count_estimated and state that it is an estimate.
+      may double count a person; use journey_count_estimated for all analytical
+      totals and comparisons across years. State that it is a project estimate
+      when the result range includes days with has_suspect_journeys = true.
     columns:
       - name: ride_date
         description: Date of journeys; together with station_group forms the grain.
       - name: station_group
         description: Physical station complex from the reviewed mapping, not an IBB field.
       - name: journey_count
-        description: Sum of source journeys over member codes and lines; use across years.
+        description: "Sum of source journey counts (turnstile passages), preserving suspect source values. Use when the user requests IBB source counts or to display them alongside journey_count_estimated."
       - name: journey_count_estimated
-        description: >
-          Sum of estimated journeys. For suspect 2022 source days this uses
-          journey_count / 2; an estimate, not an official IBB figure.
+        description: "Default measure for all analytical totals and comparisons across years. Sum of journeys with source counts divided by 2 using integer division per entrance row on suspect 2022 days; equals journey_count otherwise. The adjustment is a project estimate, not an official IBB figure."
       - name: passenger_count
-        description: Sum over codes and lines; may count the same person more than once.
+        description: "Sum of source passenger counts; may count the same person more than once. Not a count of unique people; do not use for comparisons across years."
       - name: has_suspect_journeys
         description: True when any member station/line row has suspect journeys.
       - name: line_count

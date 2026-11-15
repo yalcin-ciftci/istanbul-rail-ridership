@@ -2,7 +2,9 @@ import importlib.util
 import json
 import os
 import subprocess
+import sys
 import time
+import tomllib
 from pathlib import Path
 
 import anyio
@@ -13,6 +15,41 @@ from mcp.client.stdio import StdioServerParameters, stdio_client
 
 ROOT = Path(__file__).resolve().parents[1]
 SERVER = ROOT / "ulasim_mcp" / "server.py"
+
+
+def test_sema_metric_contract(db, tmp_path, monkeypatch):
+    contract_path = ROOT / "metrics" / "metrics.toml"
+    assert contract_path.is_file(), "Metric contract is missing"
+    contract = tomllib.loads(contract_path.read_text(encoding="utf-8"))
+    monkeypatch.chdir(tmp_path)
+    result = load_server().sema()
+    assert result["uyarilar"] == [rule["text_tr"] for rule in contract["rule"]]
+    assert result["olcu_sozlesmesi"] == {
+        "surum": contract["version"],
+        "olculer": [
+            {
+                "id": m["id"],
+                "rol": m["role"],
+                "ad": m["label_tr"],
+                "tanim": m["definition_tr"],
+            }
+            for m in contract["metric"]
+        ],
+    }
+
+
+@pytest.mark.parametrize("content", [None, "invalid = [", "version = 1"])
+def test_sema_unreadable_contract_returns_error(db, tmp_path, monkeypatch, content):
+    module = load_server()
+    assert hasattr(module, "load_contract"), "Server does not load metric contract"
+    loader = sys.modules[module.load_contract.__module__]
+    path = tmp_path / "unavailable.toml"
+    if content is not None:
+        path.write_text(content, encoding="utf-8")
+    monkeypatch.setattr(loader, "CONTRACT_PATH", path)
+    result = module.sema()
+    assert "hata" in result
+    assert "sözleşme" in result["hata"].lower()
 
 
 def load_server():
@@ -28,8 +65,6 @@ def db(tmp_path, monkeypatch):
     path = tmp_path / "fixture.duckdb"
     with duckdb.connect(str(path)) as con:
         con.execute("CREATE SCHEMA marts")
-        con.execute("CREATE SCHEMA staging")
-        con.execute("CREATE TABLE staging.secret (hidden INTEGER)")
         con.execute("""
             CREATE TABLE marts.dim_station (
                 station_code VARCHAR, station_name VARCHAR, station_group VARCHAR,
@@ -290,6 +325,7 @@ def test_missing_database_is_turkish_error(tmp_path, monkeypatch, tool, args):
     assert result["hata"].startswith(
         "Veritabanı şu an kullanılamıyor (güncelleniyor olabilir):"
     )
+    assert "uv run python tools/publish_analysis_db.py" in result["hata"]
     assert not missing.exists()
 
 
@@ -328,7 +364,38 @@ def test_default_database_path_is_relative_to_source(tmp_path, monkeypatch):
     monkeypatch.delenv("ULASIM_DB", raising=False)
     monkeypatch.chdir(tmp_path)
     # Inspect path resolution only; never open the real database.
-    assert module.database_path() == ROOT / "data" / "ulasim.duckdb"
+    assert module.database_path() == ROOT / "data" / "ulasim_analysis.duckdb"
+
+
+@pytest.mark.parametrize("schema", ["raw", "staging", "main"])
+@pytest.mark.parametrize("kind", ["TABLE", "VIEW"])
+@pytest.mark.parametrize(
+    "tool,args",
+    [
+        ("sema", ()),
+        ("sorgu", ("SELECT * FROM raw.x",)),
+        ("istasyon_bul", ("yenikapi",)),
+    ],
+)
+def test_tools_reject_database_with_non_marts_objects(db, schema, kind, tool, args):
+    with duckdb.connect(str(db)) as con:
+        con.execute(f"CREATE SCHEMA IF NOT EXISTS {schema}")
+        con.execute(f"CREATE {kind} {schema}.x AS SELECT 42 AS hidden")
+    assert getattr(load_server(), tool)(*args) == {
+        "hata": "Bu veritabanı yalnız marts şemasını içermelidir. Analiz kopyasını üretin: "
+        "uv run python tools/publish_analysis_db.py"
+    }
+    # Rejection also releases the connection.
+    with duckdb.connect(str(db)) as con:
+        assert con.execute(f"SELECT hidden FROM {schema}.x").fetchone() == (42,)
+
+
+def test_sorgu_missing_raw_table_is_readable_error(db):
+    module = load_server()
+    result = module.sorgu("SELECT * FROM raw.x")
+    assert "hata" in result and "x" in result["hata"]
+    assert "Traceback" not in result["hata"]
+    assert module.sorgu("SELECT 42")["satirlar"] == [[42]]
 
 
 @pytest.mark.parametrize("name", ["yenikapi", "YENİKAPI", "yenikpı", "  YENİKAPI  "])
@@ -405,9 +472,13 @@ def test_station_search_limit_and_tie_order(db, limit, count):
 def test_sema_only_marts_comments_scope_and_caveats(db):
     result = load_server().sema()
     tables = {table["tablo"]: table for table in result["tablolar"]}
-    assert set(tables) == {"dim_station", "dim_station_group", "fct_station_daily"}
-    assert tables["dim_station"]["aciklama"] == "İstasyon kodları"
-    columns = {col["kolon"]: col for col in tables["dim_station"]["kolonlar"]}
+    assert set(tables) == {
+        "marts.dim_station",
+        "marts.dim_station_group",
+        "marts.fct_station_daily",
+    }
+    assert tables["marts.dim_station"]["aciklama"] == "İstasyon kodları"
+    columns = {col["kolon"]: col for col in tables["marts.dim_station"]["kolonlar"]}
     assert columns["station_name"]["aciklama"] == "İstasyon adı"
     assert columns["station_name"]["tur"] == "VARCHAR"
     assert result["kapsam"] == {"min": "2022-01-01", "max": "2024-01-03"}
@@ -426,6 +497,16 @@ def test_sema_only_marts_comments_scope_and_caveats(db):
     ]:
         assert text in caveats
     json.dumps(result, ensure_ascii=False, allow_nan=False)
+
+
+def test_sema_table_names_are_directly_queryable(db):
+    server = load_server()
+    schema = server.sema()
+    assert schema["tablolar"]
+    for table in schema["tablolar"]:
+        result = server.sorgu(f"SELECT * FROM {table['tablo']} LIMIT 1")
+        assert "hata" not in result, result
+        assert len(result["satirlar"]) == 1
 
 
 def test_sema_warns_about_unreliable_district(db):

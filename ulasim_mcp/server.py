@@ -17,20 +17,11 @@ from mcp.server.mcpserver import MCPServer
 
 SORGU_BELLEK_SINIRI = "2GiB"
 
-UYARILAR = (
-    (
-        "passenger_count aynı kişiyi birden fazla sayabilir; yıllar arası "
-        "karşılaştırmalarda journey_count kullanın."
-    ),
-    (
-        "2022-03-28 ile 2022-11-02 arasında kaynak journey_count değerleri iki kat "
-        "görünüyor; journey_count_estimated kullanın ve bunun bir tahmin olduğunu belirtin."
-    ),
-    "İstasyonu olmayan hat düzeyindeki satırlar yalnızca fct_line_daily içindedir.",
-    "İstasyon grupları gözden geçirilmiş bir eşleme tablosudur; İBB kaynak alanı değildir.",
-    "Kaynaktaki ilçe alanı (district, districts) güvenilir değildir; ilçe bazlı sonuçları bu uyarıyla verin ve ek doğrulama gerektiğini belirtin.",
-    "Kaynak: İBB Açık Veri, İBB Açık Veri Lisansı (CC BY 4.0); kaynak belirtin.",
-)
+# Direct stdio execution must also find the shared repository-local loader.
+if not __package__:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from ulasim_mcp.metrics import load_contract
 
 
 def database_path() -> Path:
@@ -39,7 +30,7 @@ def database_path() -> Path:
     return (
         Path(configured)
         if configured is not None
-        else Path(__file__).resolve().parents[1] / "data" / "ulasim.duckdb"
+        else Path(__file__).resolve().parents[1] / "data" / "ulasim_analysis.duckdb"
     )
 
 
@@ -61,9 +52,28 @@ def _with_connection(
         return {
             "hata": "Veritabanı şu an kullanılamıyor (güncelleniyor olabilir): "
             + str(exc)
+            + ". Analiz kopyasını üretin: uv run python tools/publish_analysis_db.py"
         }
     try:
         with con:
+            outside_marts = con.execute(
+                """
+                SELECT table_name AS name FROM duckdb_tables()
+                WHERE database_name = current_database()
+                  AND schema_name <> ? AND NOT internal
+                UNION ALL
+                SELECT view_name AS name FROM duckdb_views()
+                WHERE database_name = current_database()
+                  AND schema_name <> ? AND NOT internal
+                LIMIT 1
+                """,
+                ["marts", "marts"],
+            ).fetchone()
+            if outside_marts is not None:
+                return {
+                    "hata": "Bu veritabanı yalnız marts şemasını içermelidir. "
+                    "Analiz kopyasını üretin: uv run python tools/publish_analysis_db.py"
+                }
             return action(con)
     except (duckdb.Error, ValueError) as exc:
         return {"hata": str(exc)}
@@ -86,6 +96,7 @@ def _json_value(value: Any) -> Any:
 
 
 def _schema(con: duckdb.DuckDBPyConnection) -> dict[str, Any]:
+    contract = load_contract()
     tables = con.execute(
         """
         SELECT table_name, comment
@@ -105,7 +116,7 @@ def _schema(con: duckdb.DuckDBPyConnection) -> dict[str, Any]:
         ["marts"],
     ).fetchall()
     by_table = {
-        name: {"tablo": name, "aciklama": comment, "kolonlar": []}
+        name: {"tablo": f"marts.{name}", "aciklama": comment, "kolonlar": []}
         for name, comment in tables
     }
     for table, column, data_type, comment in columns:
@@ -122,7 +133,19 @@ def _schema(con: duckdb.DuckDBPyConnection) -> dict[str, Any]:
     return {
         "tablolar": list(by_table.values()),
         "kapsam": scope,
-        "uyarilar": list(UYARILAR),
+        "uyarilar": [rule["text_tr"] for rule in contract["rule"]],
+        "olcu_sozlesmesi": {
+            "surum": contract["version"],
+            "olculer": [
+                {
+                    "id": metric["id"],
+                    "rol": metric["role"],
+                    "ad": metric["label_tr"],
+                    "tanim": metric["definition_tr"],
+                }
+                for metric in contract["metric"]
+            ],
+        },
     }
 
 

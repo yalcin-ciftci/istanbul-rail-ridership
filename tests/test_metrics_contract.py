@@ -1,0 +1,107 @@
+"""Measure metadata and generated consumer synchronization checks (no database)."""
+
+import importlib.util
+import subprocess
+import sys
+import tomllib
+from pathlib import Path
+
+import yaml
+
+ROOT = Path(__file__).resolve().parents[1]
+CONTRACT = ROOT / "metrics" / "metrics.toml"
+RENDERER = ROOT / "tools" / "render_agent_rules.py"
+AGENT = ROOT / "examples" / "claude-code" / "ulasim.md"
+
+
+def contract():
+    assert CONTRACT.is_file(), "Metric contract is missing"
+    return tomllib.loads(CONTRACT.read_text(encoding="utf-8"))
+
+
+def test_contract_schema():
+    data = contract()
+    assert type(data["version"]) is int
+    for key in ("metric", "rule"):
+        ids = [entry["id"] for entry in data[key]]
+        assert len(ids) == len(set(ids))
+        assert all(isinstance(value, str) and value.strip() for value in ids)
+    assert sum(item["role"] == "default" for item in data["metric"]) == 1
+    roles = {item["id"]: item["role"] for item in data["metric"]}
+    assert roles["journey_count_estimated"] == "default"
+    assert roles["journey_count"] == "source"
+    assert roles["passenger_count"] == "restricted"
+    for metric in data["metric"]:
+        assert metric["role"] in {"default", "source", "restricted"}
+        for field in ("label_tr", "definition_tr", "description_en"):
+            assert isinstance(metric[field], str) and metric[field].strip()
+        assert metric["tables"] and all(metric["tables"])
+        assert len(metric["tables"]) == len(set(metric["tables"]))
+    assert {
+        "default_metric",
+        "suspect_warning",
+        "transition_days",
+        "passenger_not_people",
+        "station_group",
+        "line_level",
+        "district",
+        "weekend",
+        "source_license",
+    } <= {rule["id"] for rule in data["rule"]}
+    assert all(rule["text_tr"].strip() for rule in data["rule"])
+
+
+def test_marts_descriptions_and_sql_match_contract():
+    models = {}
+    for filename in ("_marts.yml", "_station_groups.yml"):
+        document = yaml.safe_load(
+            (ROOT / "transform" / "models" / "marts" / filename).read_text(
+                encoding="utf-8"
+            )
+        )
+        for model in document["models"]:
+            assert model["name"] not in models
+            models[model["name"]] = {
+                col["name"]: col.get("description") for col in model["columns"]
+            }
+    for metric in contract()["metric"]:
+        actual_tables = {name for name, cols in models.items() if metric["id"] in cols}
+        assert actual_tables == set(metric["tables"])
+        for table in metric["tables"]:
+            assert models[table][metric["id"]] == metric["description_en"]
+            sql = (ROOT / "transform" / "models" / "marts" / f"{table}.sql").read_text(
+                encoding="utf-8"
+            )
+            assert f"as {metric['id']}" in sql
+
+
+def test_agent_cli_check_from_other_directory(tmp_path):
+    assert RENDERER.is_file(), "Agent rule renderer is missing"
+    result = subprocess.run(
+        [sys.executable, str(RENDERER), "--check"],
+        check=False,
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_agent_stale_block_check_and_render(tmp_path, monkeypatch):
+    assert RENDERER.is_file(), "Agent rule renderer is missing"
+    spec = importlib.util.spec_from_file_location("render_rules_under_test", RENDERER)
+    renderer = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(renderer)
+    path = tmp_path / "agent.md"
+    original = AGENT.read_text(encoding="utf-8")
+    before, rest = original.split("<!-- metrics:begin -->")
+    _, after = rest.split("<!-- metrics:end -->")
+    stale = before + "<!-- metrics:begin -->\nstale\n<!-- metrics:end -->" + after
+    path.write_text(stale, encoding="utf-8")
+    monkeypatch.setattr(renderer, "AGENT_PATH", path)
+    assert renderer.main(["--check"]) == 1
+    assert path.read_text(encoding="utf-8") == stale
+    assert renderer.main([]) == 0
+    assert path.read_text(encoding="utf-8") == original
+    assert renderer.main(["--check"]) == 0

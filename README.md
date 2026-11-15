@@ -6,7 +6,7 @@ Istanbul rail ridership from IBB Open Data, transformed with DuckDB and dbt and 
 
 ## What you can ask
 
-The [Claude Code agent example](examples/claude-code/ulasim.md) supports questions about the busiest station complexes, monthly line trends, and weekday/weekend differences. It resolves station names before querying and answers in Turkish with the SQL and data coverage. Questions about yesterday or hourly traffic are outside its coverage.
+The [Claude Code agent example](examples/claude-code/ulasim.md) supports questions about the busiest station complexes, monthly line trends, and weekday/weekend differences. It resolves specific station names mentioned in a question before querying; general rankings query station groups directly. It answers in Turkish with the SQL and data coverage. Questions about yesterday or hourly traffic are outside its coverage.
 
 Acceptance questions for v0.1, answered by the agent and re-checked with independent SQL ([full results](docs/M3.md#results-2026-11-15)):
 
@@ -28,15 +28,18 @@ flowchart LR
     Staging --> Intermediate["dbt: intermediate"]
     Intermediate --> Marts["dbt: marts"]
     Seed["station_group_map.csv: reviewed seed"] --> Marts
-    Marts --> MCP["MCP server: sema, sorgu, istasyon_bul"]
+    Marts --> Publish["Publish: marts-only analysis database"]
+    Publish --> MCP["MCP server: sema, sorgu, istasyon_bul"]
     MCP --> Agent["Claude Code sub-agent"]
 ```
 
-DuckDB keeps the raw data and analytical models in a local database file. dbt separates source preservation, cleaning, quality flags and aggregation, with unit tests and reconciliation checks. Model descriptions are persisted as database comments so the MCP `sema` tool can expose the schema and caveats to the agent. MCP gives the agent a small interface for discovering tables, resolving station names and running bounded read-only queries. Ingest uses the CKAN datastore API rather than the CSV download because it returns UTF-8 JSON with a total row count; the script checks fetched and loaded counts against that total and replaces each resource's rows transactionally on reruns.
+DuckDB keeps the raw data and analytical models in a local database file. dbt separates source preservation, cleaning, quality flags and aggregation, with unit tests and reconciliation checks. A publisher materializes only marts tables and views into a separate analysis database for MCP. Model descriptions remain in the YAML and source database comments; the materialized copy does not preserve those comments. The MCP `sema` tool exposes columns, coverage and built-in caveats. MCP gives the agent a small interface for discovering tables, resolving station names and running bounded read-only queries. Ingest uses the CKAN datastore API rather than the CSV download because it returns UTF-8 JSON with a total row count; the script checks fetched and loaded counts against that total and replaces each resource's rows transactionally on reruns.
 
 ## Data model
 
 The `marts` models are tables. Grain and column descriptions are defined in [_marts.yml](transform/models/marts/_marts.yml) and [_station_groups.yml](transform/models/marts/_station_groups.yml).
+
+The machine-readable [metric contract](metrics/metrics.toml) defines the measures and interpretation rules. MCP `sema` reads its warnings and measure summary from this file; tests require exact agreement with the metric column descriptions in both marts YAML files. After editing the contract, run `uv run python tools/render_agent_rules.py` to regenerate the marked rules in the agent example; `uv run python tools/render_agent_rules.py --check` checks for drift without writing.
 
 | Model | Grain: one row per… | Key columns and useful attributes |
 |---|---|---|
@@ -53,7 +56,7 @@ The intermediate views are described in [_intermediate.yml](transform/models/int
 - `int_journey_quality_daily`: one row per date, with the even-count share, journey/passenger ratio and `journey_suspect` flag.
 - `int_rail_entrance_daily`: one row per deduplicated entrance observation, with the daily flag and `journey_count_estimated` appended.
 
-`journey_count` measures journeys (turnstile passages). Summed `passenger_count` may count a person more than once across entrances; use journeys for comparisons across years, with the estimate caveat below.
+`journey_count_estimated` is the default measure for all analytical totals and comparisons across years; it equals the source `journey_count` outside suspect 2022 days. `journey_count` preserves IBB source journeys (turnstile passages) for requests for source counts or display alongside the estimate. Summed `passenger_count` may count a person more than once across entrances and must not be used for comparisons across years. State that the adjustment is a project estimate when the result range includes a day with `has_suspect_journeys = true`; answers covering late October–early November 2022 also need a caution about the unflagged transition days below.
 
 ## Data quality decisions
 
@@ -66,7 +69,7 @@ The intermediate views are described in [_intermediate.yml](transform/models/int
 - **Group codes into physical complexes through a reviewed mapping seed.** The current mapping covers 371 codes → 253 groups, confirmed against the local database read-only. The seed supports human review; groups are a project mapping, not an IBB field ([seed](transform/seeds/station_group_map.csv), [M3](docs/M3.md)).
 - **Treat the source district field as unreliable.** District-based analysis needs additional validation; the MCP tool's `sema` warnings and the example agent repeat this caveat.
 
-Final build at M3: `dbt build` PASS=64, WARN=6, ERROR=0. The six warnings are the data-quality tests above, kept as warnings on purpose so the counts stay visible. Python: 132 tests pass after the pre-publication fixes and post-publication hardening ([M3 results](docs/M3.md#results-2026-11-15)). On every push, GitHub Actions runs Ruff and pytest on Ubuntu and Windows ([ci.yml](.github/workflows/ci.yml)); `dbt build` needs the downloaded data and is run locally.
+Final build at M3: `dbt build` PASS=64, WARN=6, ERROR=0. The six warnings are the data-quality tests above, kept as warnings on purpose so the counts stay visible. Python: 206 tests, including metric contract synchronization, analysis publication, MCP database isolation, directly queryable schema names and station-group acronym regressions (see also [M3 results](docs/M3.md#results-2026-11-15)). On every push, GitHub Actions runs Ruff and pytest on Ubuntu and Windows ([ci.yml](.github/workflows/ci.yml)); `dbt build` needs the downloaded data and is run locally.
 
 ## Quickstart
 
@@ -110,21 +113,88 @@ do
 done
 ```
 
-Then build the models and seed, run the Python tests, and start the stdio MCP server:
+### Optional hourly data
+
+Hourly downloads are large (~0.3–1.8 GB per month); only rail rows are kept as
+Parquet and DuckDB after verification, and raw CSVs are deleted. See [M5](docs/M5.md)
+for the ingest stage and planned hourly analysis.
+Parquet is replaced after the database commit; metadata size differences warn and are recorded, while content and unencoded `Content-Length` checks must pass.
+
+```sh
+uv run python ingest/hourly_transport.py --month 2024-01
+uv run python ingest/hourly_transport.py --all
+```
+
+After downloads finish, build the models and seed, publish the analysis copy, run the Python tests, and start the stdio MCP server:
 
 ```sh
 uv run dbt build --project-dir transform --profiles-dir transform
+uv run python tools/publish_analysis_db.py
 uv run pytest -q
-uv run python ulasim_mcp/server.py
+uv run python ulasim_mcp/server.py # stdio MCP: normally launched by an MCP client; waits silently here (Ctrl+C to exit)
 ```
 
-The default database is `data/ulasim.duckdb`. The dbt profile accepts `ULASIM_DUCKDB_PATH` to override it; the ingest script accepts `--db`. If you change the location, also set the MCP server's `ULASIM_DB` to the same database file. Stop analysis queries while rebuilding: a writer can prevent the server from opening a read-only connection.
+The source database defaults to `data/ulasim.duckdb`. The dbt profile accepts `ULASIM_DUCKDB_PATH` to override it; the ingest script accepts `--db`. The publisher accepts `--source` and `--target`; its defaults resolve relative to the repository, independently of the working directory. It verifies row counts before atomically replacing `data/ulasim_analysis.duckdb`, leaving the previous copy intact on failure. Publish again after each successful build. The agent sees only cleaned marts, and can keep reading the published copy while ingest writes to the source database. Publishing itself requires the source writer to finish. If locations change, set the MCP server's `ULASIM_DB` to the publisher's target analysis file.
 
 ## Use it from Claude Code
 
 Copy [examples/claude-code/mcp.json](examples/claude-code/mcp.json) into your project's `.mcp.json` (merge `mcpServers` if a configuration already exists). Copy [examples/claude-code/ulasim.md](examples/claude-code/ulasim.md) into `.claude/agents/`. Replace every `<path-to-repo>` placeholder with your repository path. The example registers `ulasim` with stdio transport and the Windows virtual-environment interpreter; on macOS/Linux use `<path-to-repo>/.venv/bin/python` instead. Keep the server name `ulasim`: the agent's tools are named `mcp__ulasim__*`. The agent answers in Turkish.
 
-The [server](ulasim_mcp/server.py) finds its database through `ULASIM_DB`, or defaults to `data/ulasim.duckdb` relative to the repository containing the server file, independently of the working directory. Each tool call opens and closes its own read-only connection, with external access disabled and configuration locked. `sorgu` accepts exactly one statement classified by DuckDB as SELECT, including SELECT queries with CTEs. Its default result limit is 200 rows, clamped to 1–1000; it fetches one extra row to report truncation. Queries are interrupted after 30 seconds by default; `ULASIM_SORGU_ZAMAN_ASIMI` can set a positive finite timeout in seconds. These controls do not restrict SELECT queries to the `marts` schema; `sema` lists only marts metadata.
+The [server](ulasim_mcp/server.py) reads the marts-only analysis copy through `ULASIM_DB`, or defaults to `data/ulasim_analysis.duckdb` relative to the repository containing the server file, independently of the working directory. Each tool call opens and closes its own read-only connection, with external access disabled and configuration locked. Before running a tool, it rejects any database containing user tables or views outside `marts`, including when `ULASIM_DB` points to the full source database. Missing-database errors include the publication command. `sorgu` accepts exactly one statement classified by DuckDB as SELECT, including SELECT queries with CTEs. Its default result limit is 200 rows, clamped to 1–1000; it fetches one extra row to report truncation. Queries are interrupted after 30 seconds by default; `ULASIM_SORGU_ZAMAN_ASIMI` can set a positive finite timeout in seconds. `sema` lists only marts metadata, with fully qualified names such as `marts.dim_line` ready to use in `sorgu`.
+
+## Use it with other MCP clients
+
+Every example below assumes that `uv run python tools/publish_analysis_db.py` has already produced the analysis copy after a successful build. These configurations follow the working Windows setups from the CLI user tests. Replace `<path-to-repo>` with your absolute repository path, using forward slashes on Windows; on macOS/Linux replace `.venv/Scripts/python.exe` with `.venv/bin/python`.
+
+Run from the repository root. For Codex and agy, prepend the body of [the agent rules](examples/claude-code/ulasim.md), without the YAML front matter, to each question. The same prompt also works for the direct headless Claude Code example below. Prepare it in PowerShell 7:
+
+```powershell
+$env:PYTHONUTF8 = "1"
+$repo = '<path-to-repo>'
+$agent = Get-Content -Raw -Encoding utf8 "$repo/examples/claude-code/ulasim.md"
+$rules = ($agent -replace '(?s)\A---\r?\n.*?\r?\n---\r?\n', '').Replace('<path-to-repo>', $repo)
+$question = '2025 yılında en kalabalık 10 istasyon hangileridir?'
+$prompt = "$rules`n`nSoru: $question"
+```
+
+### Codex CLI
+
+Use session-specific MCP settings with `codex exec`:
+
+```powershell
+$prompt | codex exec --sandbox read-only `
+  -c ('mcp_servers.ulasim.command="' + $repo + '/.venv/Scripts/python.exe"') `
+  -c ('mcp_servers.ulasim.args=["-B","' + $repo + '/ulasim_mcp/server.py"]') `
+  -c 'mcp_servers.ulasim.env={PYTHONUTF8="1",PYTHONDONTWRITEBYTECODE="1"}' `
+  -c 'mcp_servers.ulasim.default_tools_approval_mode="approve"' `
+  -c 'mcp_servers.ulasim.required=true' -
+```
+
+`default_tools_approval_mode="approve"` preapproves this server's tools: without it, headless `codex exec` rejected tool calls in the user test because approval could not be requested. `required=true` makes server startup required. For persistent setup, put the same settings under `[mcp_servers.ulasim]` in `~/.codex/config.toml` instead of supplying `-c` arguments each time; keep prepending the agent rules to questions.
+
+### Antigravity CLI (agy)
+
+Copy [examples/agy/mcp_config.json](examples/agy/mcp_config.json) to `.agents/mcp_config.json` in your project (merge `mcpServers` if it already exists), replace the path placeholders, and run agy from that project directory. The example uses `command`, `args` and `env` without a `type` field. In the user test, `agy --settings` rejected `mcpServers` as an unknown setting; use the project configuration file instead.
+
+Headless calls need tool permissions granted in advance. The working test used `--dangerously-skip-permissions`, which bypasses permission prompts; the following prompt also asks the agent to limit its actions to MCP queries and reading tool output:
+
+```powershell
+$agyPrompt = "$prompt`nUse only ulasim MCP tools and read_file for MCP output files. Do not run shell commands or write or edit files."
+agy --dangerously-skip-permissions --print-timeout 300s -p $agyPrompt
+```
+
+The prompt is an instruction to the agent, not an enforced sandbox. If you configure tool restrictions, keep file **reading** available: agy can save large tool responses (including `sema`) to `.system_generated/steps/.../output.txt`, and the agent needs `read_file` to inspect them. Blocking all file tools prevented schema discovery in the user test. Other clients may also spill large tool output to files.
+
+### Headless Claude Code
+
+After preparing `.mcp.json` as described above, send the rules and question through **stdin**:
+
+```powershell
+$prompt | claude -p --model sonnet --mcp-config .mcp.json --strict-mcp-config `
+  --allowedTools "mcp__ulasim__sema,mcp__ulasim__sorgu,mcp__ulasim__istasyon_bul"
+```
+
+`--allowedTools` accepts multiple values, so a question appended after it may be consumed as another option value. Stdin avoids the missing-prompt error observed in the user test. This example supplies the rules directly to the main session; the interactive setup above installs them as a Claude Code sub-agent.
 
 ## Limitations
 
@@ -171,4 +241,6 @@ Third-party tooling notices:
 
 ## Türkçe özet
 
-Bu proje, İBB açık verisindeki 2021–2025 günlük raylı sistem yolculuk verilerini DuckDB ve dbt ile analiz edilebilir tablolara dönüştürür. Salt okunur MCP sunucusu ve Claude Code alt ajanı, istasyon ve hat sorularını Türkçe yanıtlar ve kullanılan SQL'i gösterir. İstasyon kodları, gözden geçirilmiş bir eşleme tablosuyla fiziksel istasyon gruplarına bağlanır. Kaynaktaki 2022 anomalisi işaretlenir; özgün sayılar korunurken ayrıca projenin tahmin sütunu sunulur. Veri gerçek zamanlı değildir; ham yolculuk verisi depoda dağıtılmaz (istasyon eşleme tablosu kaynaktaki istasyon kodlarını ve adlarını içerir). Kaynaktaki ilçe alanı güvenilir değildir. Kod MIT, kaynak veri ise İBB Açık Veri Lisansı 1.0 kapsamındadır.
+Claude Code dışında Codex CLI ve Antigravity CLI (agy) bağlantıları ile başsız çağrı örnekleri [diğer MCP istemcileri bölümündedir](#use-it-with-other-mcp-clients). Örnekler yayımlanmış analiz kopyasını varsayar. Codex başsız kullanımında MCP araç onayı önceden verilir; agy proje içindeki `.agents/mcp_config.json` dosyasını kullanır ve büyük araç çıktılarını okuyabilmek için dosya okuma iznine ihtiyaç duyabilir. Başsız Claude Code soruyu stdin'den alır. Stdio sunucusu normalde istemci tarafından başlatılır; terminalde sessizce beklemesi normaldir (Ctrl+C ile çıkılır). `sema` tablo adlarını `marts.` önekiyle verir; istasyon araması yalnız soruda belirli bir istasyon adı geçtiğinde yapılır, genel sıralamalar doğrudan istasyon grubu tablosunu kullanır.
+
+Bu proje, İBB açık verisindeki 2021–2025 günlük raylı sistem yolculuk verilerini DuckDB ve dbt ile analiz edilebilir tablolara dönüştürür. Salt okunur MCP sunucusu ve Claude Code alt ajanı, istasyon ve hat sorularını Türkçe yanıtlar ve kullanılan SQL'i gösterir. MCP yalnız `uv run python tools/publish_analysis_db.py` ile üretilen `data/ulasim_analysis.duckdb` analiz kopyasını okur; `marts` dışında kullanıcı tablosu veya view içeren veritabanını reddeder. Böylece ajan temizlenmiş marts verisini görür ve ingest ana veritabanına yazarken yayımlanmış kopyayı okuyabilir. İstasyon kodları, gözden geçirilmiş bir eşleme tablosuyla fiziksel istasyon gruplarına bağlanır. Ölçü tanımları ve yorum kuralları [tek ölçü sözleşmesinde](metrics/metrics.toml) tutulur. Tüm analiz toplamları ve yıllar arası karşılaştırmalar için varsayılan journey_count_estimated kullanılır; şüpheli 2022 günleri dışında journey_count ile aynıdır. journey_count, İBB kaynak sayısı istendiğinde veya tahminle yan yana gösterilirken kullanılır. Sonuç aralığında has_suspect_journeys = true olan gün varsa bunun projenin tahmini olduğu belirtilir; 2022 Ekim sonu–Kasım başını kapsayan cevaplarda işaretlenmemiş 2022-10-31 ve 2022-11-01 geçiş günleri için dikkat notu verilir. passenger_count tekil kişi değildir ve yıllar arası karşılaştırmada kullanılmaz. Veri gerçek zamanlı değildir; ham yolculuk verisi depoda dağıtılmaz (istasyon eşleme tablosu kaynaktaki istasyon kodlarını ve adlarını içerir). Kaynaktaki ilçe alanı güvenilir değildir. Kod MIT, kaynak veri ise İBB Açık Veri Lisansı 1.0 kapsamındadır.

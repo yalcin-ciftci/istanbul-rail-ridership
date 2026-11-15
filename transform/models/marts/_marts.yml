@@ -45,8 +45,8 @@ models:
     description: >
       One row per date, station code and line after exact duplicate removal.
       Summing passenger_count across entrances may count one person more than
-      once; finer-grained 2021 and 2024 inflate it more. Use journey_count for
-      comparisons across years. Line-level rows have no station and appear only
+      once; finer-grained 2021 and 2024 inflate it more. Use journey_count_estimated for
+      all analytical totals and comparisons across years. Line-level rows have no station and appear only
       in fct_line_daily.
     columns:
       - name: ride_date
@@ -69,21 +69,21 @@ models:
                 to: ref('dim_line')
                 field: line_name
       - name: journey_count
-        description: Sum of source journeys over entrances; use for comparisons across years.
+        description: "Sum of source journey counts (turnstile passages), preserving suspect source values. Use when the user requests IBB source counts or to display them alongside journey_count_estimated."
       - name: passenger_count
-        description: Sum over entrances; may count the same person more than once.
+        description: "Sum of source passenger counts; may count the same person more than once. Not a count of unique people; do not use for comparisons across years."
       - name: entrance_rows
         description: Count of entrance rows after exact duplicate removal.
       - name: journey_count_estimated
-        description: "ESTIMATE. Equals journey_count except on days flagged journey_suspect (2022 source anomaly: journey counts appear multiplied by 2), where it is journey_count / 2. Not an official IBB figure."
+        description: "Default measure for all analytical totals and comparisons across years. Sum of journeys with source counts divided by 2 using integer division per entrance row on suspect 2022 days; equals journey_count otherwise. The adjustment is a project estimate, not an official IBB figure."
       - name: has_suspect_journeys
         description: True when any entrance in the group has journey_suspect set.
   - name: fct_line_daily
     description: >
       One row per date and line, including line-level rows with no station.
       Summing passenger_count across entrances may count one person more than
-      once; finer-grained 2021 and 2024 inflate it more. Use journey_count for
-      comparisons across years.
+      once; finer-grained 2021 and 2024 inflate it more. Use journey_count_estimated for
+      all analytical totals and comparisons across years.
     columns:
       - name: ride_date
         description: Date of journeys; together with line_name forms the grain.
@@ -97,14 +97,14 @@ models:
                 to: ref('dim_line')
                 field: line_name
       - name: journey_count
-        description: Sum of station and line-level journeys; use for comparisons across years.
+        description: "Sum of source journey counts (turnstile passages), preserving suspect source values. Use when the user requests IBB source counts or to display them alongside journey_count_estimated."
       - name: passenger_count
-        description: Sum over entrances and line-level rows; may double count a person.
+        description: "Sum of source passenger counts; may count the same person more than once. Not a count of unique people; do not use for comparisons across years."
       - name: station_count
         description: Distinct station codes; zero for line-level-only days.
       - name: has_line_level_rows
         description: True if any source row for the line/date has no station code.
       - name: journey_count_estimated
-        description: "ESTIMATE. Equals journey_count except on days flagged journey_suspect (2022 source anomaly: journey counts appear multiplied by 2), where it is journey_count / 2. Not an official IBB figure."
+        description: "Default measure for all analytical totals and comparisons across years. Sum of journeys with source counts divided by 2 using integer division per entrance row on suspect 2022 days; equals journey_count otherwise. The adjustment is a project estimate, not an official IBB figure."
       - name: has_suspect_journeys
         description: True when any entrance in the group has journey_suspect set.

@@ -32,9 +32,13 @@ def normalize_key(name: str) -> str:
 
 
 def title_case(key: str) -> str:
-    """Display a normalised key using Turkish title case per word."""
+    """Display a normalised key using Turkish title case, preserving acronyms."""
     upper = str.maketrans({"i": "İ", "ı": "I"})
-    return " ".join(word[0].translate(upper).upper() + word[1:] for word in key.split())
+    acronyms = {"itü": "İTÜ", "idtm": "İDTM", "imes": "İMES"}
+    return " ".join(
+        acronyms.get(word, word[0].translate(upper).upper() + word[1:])
+        for word in key.split()
+    )
 
 
 def _draft_rows(stations: list[tuple[str, str | None]]) -> list[dict[str, str]]:
