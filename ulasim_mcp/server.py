@@ -26,6 +26,7 @@ UYARILAR = (
     ),
     "İstasyonu olmayan hat düzeyindeki satırlar yalnızca fct_line_daily içindedir.",
     "İstasyon grupları gözden geçirilmiş bir eşleme tablosudur; İBB kaynak alanı değildir.",
+    "Kaynaktaki ilçe alanı (district, districts) güvenilir değildir; ilçe bazlı sonuçları bu uyarıyla verin ve ek doğrulama gerektiğini belirtin.",
     "Kaynak: İBB Açık Veri, İBB Açık Veri Lisansı (CC BY 4.0); kaynak belirtin.",
 )
 

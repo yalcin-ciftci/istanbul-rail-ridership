@@ -1,5 +1,6 @@
 import csv
 import importlib.util
+import os
 from pathlib import Path
 
 import duckdb
@@ -183,6 +184,27 @@ def test_existing_checked_records_survive_byte_for_byte_and_new_code_is_sorted(
     assert rows[-1]["status"] == "checked"
     draft.generate(db, output)
     assert output.read_bytes() == content
+
+
+def test_replace_failure_preserves_csv_and_removes_temporary_file(
+    tmp_path, monkeypatch
+):
+    draft = load_draft()
+    db, output = tmp_path / "test.duckdb", tmp_path / "map.csv"
+    make_db(db, [("ZZZ-1", "Yenikapı")])
+    draft.generate(db, output)
+    original = output.read_bytes()
+    with duckdb.connect(str(db)) as con:
+        con.execute("insert into marts.dim_station values (?, ?)", ["AAA-1", "İstinye"])
+
+    def fail_replace(source, destination):
+        raise OSError("replace failed")
+
+    monkeypatch.setattr(draft, "os", os, raising=False)
+    monkeypatch.setattr(draft.os, "replace", fail_replace)
+    assert draft.main(["--db", str(db), "--csv", str(output)]) == 1
+    assert output.read_bytes() == original
+    assert not list(output.parent.glob("*.tmp"))
 
 
 def test_cli_defaults_and_overrides(tmp_path, monkeypatch):

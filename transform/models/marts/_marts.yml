@@ -14,7 +14,7 @@ models:
       - name: station_name
         description: Latest known non-NULL repaired station name.
       - name: district
-        description: Latest known non-NULL district, independently of the name.
+        description: Latest known non-NULL district, independently of the name. The source district field is unreliable; validate before district-level analysis.
       - name: longitude
         description: Mean longitude over distinct pairs in the latest available year.
       - name: latitude

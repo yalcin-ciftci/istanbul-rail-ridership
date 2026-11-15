@@ -3,8 +3,10 @@
 import argparse
 import csv
 import io
+import os
 import re
 import sys
+import tempfile
 from collections import defaultdict
 from pathlib import Path
 
@@ -113,6 +115,21 @@ def _existing_records(path: Path) -> tuple[bytes, dict[str, bytes]]:
     return header, records
 
 
+def _write_atomic(path: Path, content: bytes) -> None:
+    descriptor, temporary = tempfile.mkstemp(
+        dir=path.parent, prefix=f".{path.name}.", suffix=".tmp"
+    )
+    try:
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    except BaseException:
+        Path(temporary).unlink(missing_ok=True)
+        raise
+
+
 def generate(db: Path, output: Path) -> int:
     """Read dim_station read-only and add only codes absent from the mapping CSV."""
     with duckdb.connect(str(db), read_only=True) as connection:
@@ -134,7 +151,7 @@ def generate(db: Path, output: Path) -> int:
         content += chunk
     if not output.exists() or output.read_bytes() != content:
         output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_bytes(content)
+        _write_atomic(output, content)
     return added
 
 

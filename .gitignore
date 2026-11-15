@@ -25,3 +25,9 @@ transform/logs/
 .pytest-tmp/
 .pytest_cache/
 .ruff_cache/
+
+# Local secrets and tool settings
+.env
+.env.*
+.mcp.json
+.claude/settings.local.json

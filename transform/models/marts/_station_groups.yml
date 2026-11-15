@@ -41,7 +41,7 @@ models:
       - name: line_names
         description: Comma-separated distinct lines observed in fct_station_daily, sorted.
       - name: districts
-        description: Comma-separated distinct non-NULL districts of member codes, sorted.
+        description: Comma-separated distinct non-NULL districts of member codes, sorted. The source district field is unreliable; validate before district-level analysis.
       - name: first_seen_date
         description: Earliest observation date among member station codes.
       - name: last_seen_date

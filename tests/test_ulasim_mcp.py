@@ -8,9 +8,8 @@ from pathlib import Path
 import anyio
 import duckdb
 import pytest
-from mcp.client.stdio import StdioServerParameters, stdio_client
-
 from mcp import ClientSession
+from mcp.client.stdio import StdioServerParameters, stdio_client
 
 ROOT = Path(__file__).resolve().parents[1]
 SERVER = ROOT / "ulasim_mcp" / "server.py"
@@ -379,6 +378,11 @@ def test_sema_only_marts_comments_scope_and_caveats(db):
     ]:
         assert text in caveats
     json.dumps(result, ensure_ascii=False, allow_nan=False)
+
+
+def test_sema_warns_about_unreliable_district(db):
+    result = load_server().sema()
+    assert any("ilçe" in warning for warning in result["uyarilar"])
 
 
 def test_sema_missing_fact_table_has_null_scope(db):

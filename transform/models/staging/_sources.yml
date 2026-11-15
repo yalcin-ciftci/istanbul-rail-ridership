@@ -22,7 +22,7 @@ sources:
     - name: station_number
       description: Station code.
     - name: town
-      description: District name, possibly empty.
+      description: District name, possibly empty. Unreliable in the source; validate before district-level analysis.
     - name: longitude
       description: Longitude text with misplaced dots.
     - name: latitude

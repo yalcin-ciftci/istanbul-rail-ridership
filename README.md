@@ -64,9 +64,9 @@ The intermediate views are described in [_intermediate.yml](transform/models/int
 - **Normalize empty codes and names to NULL and repair Turkish mojibake.** M2 recorded 760 rows with a code but no station name; these remain distinguishable from line totals ([M2](docs/M2.md)).
 - **Flag the apparent 2022 doubling; preserve source counts.** `journey_suspect` identifies 218 days between 2022-03-28 and 2022-11-02. The rule requires an even-count share of at least 0.99 and a journey/passenger ratio of at least 1.8. Two days inside that interval, 2022-10-31 and 2022-11-01, are not flagged. `journey_count_estimated` uses integer division by 2 on flagged days and the original count otherwise. Raw data is untouched; the estimate is the project's assumption, not an official IBB correction ([M2](docs/M2.md#2022-journey-count-anomaly-m21)).
 - **Group codes into physical complexes through a reviewed mapping seed.** The current mapping covers 371 codes → 253 groups, confirmed against the local database read-only. The seed supports human review; groups are a project mapping, not an IBB field ([seed](transform/seeds/station_group_map.csv), [M3](docs/M3.md)).
-- **Treat the source district field as unreliable.** District-based analysis needs additional validation.
+- **Treat the source district field as unreliable.** District-based analysis needs additional validation; the MCP tool's `sema` warnings and the example agent repeat this caveat.
 
-Final build at M3: `dbt build` PASS=64, WARN=6, ERROR=0. The six warnings are the data-quality tests above, kept as warnings on purpose so the counts stay visible. Python: 106 tests pass ([M3 results](docs/M3.md#results-2026-11-15)).
+Final build at M3: `dbt build` PASS=64, WARN=6, ERROR=0. The six warnings are the data-quality tests above, kept as warnings on purpose so the counts stay visible. Python: 108 tests pass after the pre-publication fixes ([M3 results](docs/M3.md#results-2026-11-15)). On every push, GitHub Actions runs Ruff and pytest on Ubuntu and Windows ([ci.yml](.github/workflows/ci.yml)); `dbt build` needs the downloaded data and is run locally.
 
 ## Quickstart
 
@@ -145,7 +145,7 @@ Code, tests and documentation were written by AI agents; Yalçın Çiftçi did n
 - **OpenAI Codex (GPT-6.1 Sol), implementer:** wrote the code, tests and dbt models from the briefs, test-first.
 - **Independent audit:** at the end of M1 a model from a different provider (Gemini, via Antigravity) audited the work in a fresh context; its one warning was fixed test-first.
 
-[AGENTS.md](AGENTS.md) records repository rules, responsibilities, boundaries and verification requirements. [.agents/skills/](.agents/skills/) contains reusable engineering workflows and their upstream license notices and source commit identifiers. [.codex/agents/reviewer.toml](.codex/agents/reviewer.toml) configures a separate read-only reviewer role. These files stay in the repository to make the AI-assisted working process inspectable and reusable.
+[AGENTS.md](AGENTS.md) records repository rules, responsibilities, boundaries and verification requirements. [.agents/skills/](.agents/skills/) contains reusable engineering workflows and their upstream license notices and source commit identifiers. Upstream example files that do not apply to this DuckDB project were removed; see [REMOVED.md](.agents/skills/REMOVED.md). [.codex/agents/reviewer.toml](.codex/agents/reviewer.toml) configures a separate read-only reviewer role. These files stay in the repository to make the AI-assisted working process inspectable and reusable.
 
 In the milestone docs, *Morks* is the name of the Claude Code orchestrator session, and *project note* / *vault* refer to the owner's private planning notes, which are not part of this repository.
 
@@ -161,14 +161,14 @@ Data comes from IBB Open Data under the [İBB Açık Veri Lisansı 1.0](https://
 
 This project is not affiliated with or endorsed by Istanbul Metropolitan Municipality (IBB).
 
-Data is downloaded by the user and is not redistributed here; `data/` is git-ignored.
+Raw ridership records are not redistributed here: users download them from IBB, and `data/` is git-ignored. The mapping seed [`transform/seeds/station_group_map.csv`](transform/seeds/station_group_map.csv) does contain source station codes and names from the same IBB dataset (same licence and attribution as above); its `station_group`, `status` and `note` columns are the project's reviewed mapping.
 
 Third-party tooling notices:
 
 - [obra/superpowers](https://github.com/obra/superpowers) engineering skills: MIT; [bundled license](.agents/skills/LICENSE-superpowers.txt).
 - [dbt-labs/dbt-agent-skills](https://github.com/dbt-labs/dbt-agent-skills): Apache-2.0; [bundled license](.agents/skills/LICENSE-dbt-agent-skills.txt).
-- Reviewer role template from [affaan-m/ECC](https://github.com/affaan-m/ECC): MIT, adapted as credited in [reviewer.toml](.codex/agents/reviewer.toml).
+- Reviewer role template from [affaan-m/ECC](https://github.com/affaan-m/ECC): MIT; [bundled license](.codex/agents/LICENSE-ECC.txt); adapted as credited in [reviewer.toml](.codex/agents/reviewer.toml).
 
 ## Türkçe özet
 
-Bu proje, İBB açık verisindeki 2021–2025 günlük raylı sistem yolculuk verilerini DuckDB ve dbt ile analiz edilebilir tablolara dönüştürür. Salt okunur MCP sunucusu ve Claude Code alt ajanı, istasyon ve hat sorularını Türkçe yanıtlar ve kullanılan SQL'i gösterir. İstasyon kodları, gözden geçirilmiş bir eşleme tablosuyla fiziksel istasyon gruplarına bağlanır. Kaynaktaki 2022 anomalisi işaretlenir; özgün sayılar korunurken ayrıca projenin tahmin sütunu sunulur. Veri gerçek zamanlı değildir ve depoda dağıtılmaz; kod MIT, kaynak veri ise İBB Açık Veri Lisansı 1.0 kapsamındadır.
+Bu proje, İBB açık verisindeki 2021–2025 günlük raylı sistem yolculuk verilerini DuckDB ve dbt ile analiz edilebilir tablolara dönüştürür. Salt okunur MCP sunucusu ve Claude Code alt ajanı, istasyon ve hat sorularını Türkçe yanıtlar ve kullanılan SQL'i gösterir. İstasyon kodları, gözden geçirilmiş bir eşleme tablosuyla fiziksel istasyon gruplarına bağlanır. Kaynaktaki 2022 anomalisi işaretlenir; özgün sayılar korunurken ayrıca projenin tahmin sütunu sunulur. Veri gerçek zamanlı değildir; ham yolculuk verisi depoda dağıtılmaz (istasyon eşleme tablosu kaynaktaki istasyon kodlarını ve adlarını içerir). Kaynaktaki ilçe alanı güvenilir değildir. Kod MIT, kaynak veri ise İBB Açık Veri Lisansı 1.0 kapsamındadır.
