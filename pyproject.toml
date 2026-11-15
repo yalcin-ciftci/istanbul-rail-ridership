@@ -1,0 +1,35 @@
+[project]
+name = "istanbul-ulasim"
+version = "0.1.0"
+description = "Istanbul rail ridership pipeline (IBB Open Data -> DuckDB -> dbt) with a read-only MCP tool and agent"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "dbt-duckdb>=1.11.1",
+    "duckdb>=2.0.0",
+    "httpx>=0.28.1",
+    "mcp>=2.3.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "ruff>=0.17.5",
+]
+
+[tool.uv]
+# Project-local cache so sandboxed agents (Codex) can run uv without access to the user cache.
+cache-dir = ".uv-cache"
+# Copy (not hardlink) packages into .venv so the sandbox user can read them.
+link-mode = "copy"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["ingest"]
+# No cache: the Codex sandbox user and the main user must not share .pytest_cache (cross-user ACL errors
+# on Windows). Per-user temp dirs are set in tests/conftest.py.
+addopts = "-p no:cacheprovider"
+
+[tool.ruff]
+# Third-party agent skills are kept byte-for-byte as published; do not lint/format them.
+extend-exclude = [".agents", ".codex"]

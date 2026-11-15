@@ -1,0 +1,110 @@
+version: 2
+
+models:
+  - name: dim_station
+    description: >
+      One row per station code with latest non-NULL name and district, breaking
+      date ties by greatest source_row_id. Coordinates average distinct pairs
+      in the latest year with coordinates. Line-level rows have no station and
+      appear only in fct_line_daily.
+    columns:
+      - name: station_code
+        description: Entrance/platform-level station code, unique within the dimension.
+        data_tests: [not_null]
+      - name: station_name
+        description: Latest known non-NULL repaired station name.
+      - name: district
+        description: Latest known non-NULL district, independently of the name.
+      - name: longitude
+        description: Mean longitude over distinct pairs in the latest available year.
+      - name: latitude
+        description: Mean latitude over the same distinct pairs as longitude.
+      - name: first_seen_date
+        description: Earliest observation date of this station code.
+      - name: last_seen_date
+        description: Latest observation date of this station code.
+      - name: line_count
+        description: Distinct lines ever observed for this station.
+      - name: station_group
+        description: Physical complex from the reviewed mapping, not an IBB field; NULL when unassigned.
+  - name: dim_line
+    description: One row per repaired line name, covering station and line-level rows.
+    columns:
+      - name: line_name
+        description: Repaired source line name, unique within the dimension.
+        data_tests: [not_null]
+      - name: line_code
+        description: Text before the first hyphen or space.
+      - name: has_line_level_rows
+        description: True if the line has observations without a station code.
+      - name: first_seen_date
+        description: Earliest observation date of this line.
+      - name: last_seen_date
+        description: Latest observation date of this line.
+  - name: fct_station_daily
+    description: >
+      One row per date, station code and line after exact duplicate removal.
+      Summing passenger_count across entrances may count one person more than
+      once; finer-grained 2021 and 2024 inflate it more. Use journey_count for
+      comparisons across years. Line-level rows have no station and appear only
+      in fct_line_daily.
+    columns:
+      - name: ride_date
+        description: Date of journeys; grain also includes station_code and line_name.
+        data_tests: [not_null]
+      - name: station_code
+        description: Entrance/platform-level station code linked to dim_station.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_station')
+                field: station_code
+      - name: line_name
+        description: Repaired source line name linked to dim_line.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_line')
+                field: line_name
+      - name: journey_count
+        description: Sum of source journeys over entrances; use for comparisons across years.
+      - name: passenger_count
+        description: Sum over entrances; may count the same person more than once.
+      - name: entrance_rows
+        description: Count of entrance rows after exact duplicate removal.
+      - name: journey_count_estimated
+        description: "ESTIMATE. Equals journey_count except on days flagged journey_suspect (2022 source anomaly: journey counts appear multiplied by 2), where it is journey_count / 2. Not an official IBB figure."
+      - name: has_suspect_journeys
+        description: True when any entrance in the group has journey_suspect set.
+  - name: fct_line_daily
+    description: >
+      One row per date and line, including line-level rows with no station.
+      Summing passenger_count across entrances may count one person more than
+      once; finer-grained 2021 and 2024 inflate it more. Use journey_count for
+      comparisons across years.
+    columns:
+      - name: ride_date
+        description: Date of journeys; together with line_name forms the grain.
+        data_tests: [not_null]
+      - name: line_name
+        description: Repaired source line name linked to dim_line.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_line')
+                field: line_name
+      - name: journey_count
+        description: Sum of station and line-level journeys; use for comparisons across years.
+      - name: passenger_count
+        description: Sum over entrances and line-level rows; may double count a person.
+      - name: station_count
+        description: Distinct station codes; zero for line-level-only days.
+      - name: has_line_level_rows
+        description: True if any source row for the line/date has no station code.
+      - name: journey_count_estimated
+        description: "ESTIMATE. Equals journey_count except on days flagged journey_suspect (2022 source anomaly: journey counts appear multiplied by 2), where it is journey_count / 2. Not an official IBB figure."
+      - name: has_suspect_journeys
+        description: True when any entrance in the group has journey_suspect set.

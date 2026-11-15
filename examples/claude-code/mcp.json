@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "ulasim": {
+      "type": "stdio",
+      "command": "<path-to-repo>/.venv/Scripts/python.exe",
+      "args": ["-B", "<path-to-repo>/ulasim_mcp/server.py"],
+      "env": {
+        "PYTHONUTF8": "1",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      }
+    }
+  }
+}

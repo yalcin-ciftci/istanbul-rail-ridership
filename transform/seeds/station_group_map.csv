@@ -1,0 +1,372 @@
+station_code,station_name,station_group,status,note
+A1S-A1S,Atatürk Oto Sanayi Kuzey,Atatürk Oto Sanayi,checked,Morks: kept
+ACM-AC1,Acıbadem (Batı),Acıbadem,rule,
+ACM-AC2,Acıbadem (Doğu),Acıbadem,rule,
+AKE-AKS,Aksaray,Aksaray,checked,Morks: M1 + T1 transfer
+AKE-EMN,Aksaray 1,Aksaray,checked,Morks: M1 + T1 transfer
+AKE-KBT,Yusufpaşa,Yusufpaşa,checked,Morks: kept
+AKN-KBT,Akıncılar,Akıncılar,rule,
+AKR-KBT,Aksaray,Aksaray,checked,Morks: M1 + T1 transfer
+AKY-GH1,ARNAVUTKÖY  GUNEY,Arnavutköy,rule,
+AKY-GH2,ARNAVUTKÖY  KUZEY,Arnavutköy,rule,
+ALB-ALB,Alibeyköy,Alibeyköy,checked,Morks: M7 + T5 transfer area
+ALC-ALC,Cep Otogar,Cep Otogar,rule,
+ALF-ALF,Ali Fuat Başgil,Ali Fuat Başgil,rule,
+ALK-AL1,ALİBEYKÖY BATI,Alibeyköy,checked,Morks: M7 + T5 transfer area
+ALK-AL2,ALİBEYKÖY DOĞU,Alibeyköy,checked,Morks: M7 + T5 transfer area
+ALK-ALM,Alibeyköy Metro,Alibeyköy,checked,Morks: M7 + T5 transfer area
+ALM-ALM,Alibeyköy Metro,Alibeyköy,checked,Morks: M7 + T5 transfer area
+ALZ-AM1,Altunizade 1,Altunizade,rule,
+ALZ-AM2,Altunizade 2,Altunizade,rule,
+AOS-AOS,Atatürk Oto Sanayi Güney,Atatürk Oto Sanayi,checked,Morks: kept
+AOY-KBT,Atatürk Öğrenci Yurdu,Atatürk Öğrenci Yurdu,rule,
+ASI-ASI,Altınşehir,Altınşehir,rule,
+ASN-ASN,Aşiyan,Aşiyan,rule,
+ASR-ANS,Ayvansaray,Ayvansaray,rule,
+ATA-MR1,Atalar,Atalar,rule,
+ATM-KBT,Akşemsettin,Akşemsettin,rule,
+ATT-ATT,ATATÜRK MAHALLESİ,Atatürk Mahallesi,rule,
+ATY-ATA,ATAKÖY,Ataköy,checked,Morks: kept
+ATY-MR1,Ataköy,Ataköy,checked,Morks: kept
+AYC-AY1,Ayrılıkçeşme,Ayrılık Çeşmesi,checked,"Morks: M4 + Marmaray transfer, spelling variants"
+AYC-MR1,Ayrılıkçeşmesi,Ayrılık Çeşmesi,checked,"Morks: M4 + Marmaray transfer, spelling variants"
+AYD-MR1,Aydıntepe,Aydıntepe,rule,
+AYK-AYK,AYŞE KADIN,Ayşe Kadın,rule,
+BAH-BAH,Bahçelievler,Bahçelievler,checked,Morks: kept
+BAK-MR1,Bakırköy-1,Bakırköy,checked,Morks: kept
+BAK-MR2,Bakırköy-2,Bakırköy,checked,Morks: kept
+BAY-BAY,Bayrampaşa,Bayrampaşa,rule,
+BDO-BDO,Bakırköy İdo,Bakırköy İdo,rule,
+BGC-KBT,Bağcılar,Bağcılar,rule,
+BGG-BGG,Boğaz Köprüsü 2,Boğaz Köprüsü,rule,
+BGM-BGM,Bağcılar Meydan,Bağcılar Meydan,rule,
+BHE-BHE,Bahçelievler,Bahçelievler,checked,Morks: kept
+BHR-BHR,BAHARİYE,Bahariye,rule,
+BHS-BHS,Bahçeşehir,Bahçeşehir,rule,
+BIU-BIU,Boğaziçi,Boğaziçi,checked,Morks: kept
+BIU-RHU,Rumeli Hisarüstü,Rumeli Hisarüstü,checked,Morks: kept
+BKK-BKK,Bakırköy,Bakırköy-İncirli,checked,Morks: M1 + M3 transfer; not Marmaray Bakırköy
+BKK-INC,İncirli,Bakırköy-İncirli,checked,Morks: M1 + M3 transfer; not Marmaray Bakırköy
+BLG-BLG,Bulgurlu,Bulgurlu,rule,
+BLR-BLR,Bağlarbaşı,Bağlarbaşı,rule,
+BLT-BAL,Balat,Balat,rule,
+BRC-BRC,Bereç,Bereç,rule,
+BSA-MR1,Başak,Başak,rule,
+BSH-BSH,Maltepe Altıntepe,Maltepe Altıntepe,rule,
+BSK-BSK,Başak Konutları,Başak Konutları,rule,
+BST-BT1,Bostancı,Bostancı,checked,Morks: kept
+BST-BT2,Bostancı (Doğu),Bostancı,checked,Morks: kept
+BST-BT3,Bostancı (Batı),Bostancı,checked,Morks: kept
+BTB-BTB,Baştabya,Baştabya,rule,
+BTI-BCI,BOSTANCI,Bostancı,checked,Morks: kept
+BTI-MR1,Bostancı-1,Bostancı,checked,Morks: kept
+BTI-MR2,Bostancı-2,Bostancı,checked,Morks: kept
+BYZ-KBT,Beyazıt,Beyazıt,rule,
+CAN-CAN,CANKURTARAN,Cankurtaran,rule,
+CAR-CAR,Çarşı,Çarşı,rule,
+CAY-MR1,Çayırova,Çayırova,rule,
+CBA-CBA,Cibali,Cibali,rule,
+CBC-CBC,Cebeci,Cebeci,rule,
+CBN-CBN,ÇOBANÇEŞME,Çobançeşme,rule,
+CER-CER,CERRAHPAŞA,Cerrahpaşa,rule,
+CGL-CG1,ÇAĞLAYAN BATI,Çağlayan,rule,
+CGL-CG2,ÇAĞLAYAN DOĞU,Çağlayan,rule,
+CKM-CK1,Çekmeköy 1,Çekmeköy,rule,
+CKM-CK2,Çekmeköy 2,Çekmeköy,rule,
+CKR-CKR,Çukurçeşme,Çukurçeşme,rule,
+CMH-CMH,Cumhuriyet,Cumhuriyet,rule,
+CMI-KBT,Cami,Cami,rule,
+CMK-CMK,Çakmak,Çakmak,rule,
+CPA-KBT,Çapa,Çapa,rule,
+CRC-CR1,ÇIRÇIR BATI,Çırçır,rule,
+CRC-CR2,ÇIRÇIR DOĞU,Çırçır,rule,
+CTS-KBT,Çemberlitaş,Çemberlitaş,rule,
+CVZ-MR1,Cevizli-1,Cevizli,rule,
+CVZ-MR2,Cevizli-2,Cevizli,rule,
+DAR-MR1,Darıca,Darıca,rule,
+DAV-DAV,Davutpaşa,Davutpaşa,rule,
+DDI-DDI,Dudullu,Dudullu,rule,
+DDI-DDL,DUDULLU,Dudullu,rule,
+DMR-DMR,Demirkapı,Demirkapı,rule,
+DS1-DS1,Darüşşafaka,Darüşşafaka,rule,
+DS1-DS2,Darüşşafaka Güney,Darüşşafaka,rule,
+DSA-DSA,DOĞU SANAYİ,Doğu Sanayi,rule,
+DTM-DTM,İdtm,İdtm,rule,
+EAP-EAP,EMİN ALİ PAŞA,Emin Ali Paşa,rule,
+EDH-EDH,Eyüp Devlet Hastanesi,Eyüp Devlet Hastanesi,rule,
+EDK-EDK,Edirnekapı,Edirnekapı,rule,
+EKT-EKT,Esenkent Cevizli,Esenkent Cevizli,rule,
+EMH-EMN,Eminönü,Eminönü,checked,Morks: kept
+EMI-EMN,,Eminönü,checked,Morks: T5 Eminönü before code change (name NULL)
+EMI-KBT,Eminönü 2,Eminönü,checked,Morks: kept
+EMI-MR1,Sirkeci-1,Sirkeci,checked,Morks: kept
+EMI-MR2,Sirkeci-2,Sirkeci,checked,Morks: kept
+EMI-MR3,Sirkeci-3,Sirkeci,checked,Morks: kept
+EMI-MR4,Sirkeci-4,Sirkeci,checked,Morks: kept
+EMI-SRC,SİRKECİ,Sirkeci,checked,Morks: kept
+EMI-SRK,Sirkeci,Sirkeci,checked,Morks: kept
+EMT-EMT,Emniyet,Emniyet,rule,
+ERK-MR1,Erenköy,Erenköy,rule,
+ESE-ESE,Esenler,Esenler,rule,
+ETL-ETL,Etiler,Etiler,rule,
+EYP-FSH,Feshane,Feshane,rule,
+EYU-EPT,Eyüp Teleferik,Eyüp Teleferik,checked,Morks: kept
+EYU-PLT,Eyüp,Eyüp,checked,Morks: kept
+FAT-MR1,Fatih,Fatih,rule,
+FCK-FCK,Fevzi Çakmak,Fevzi Çakmak,rule,
+FDL-KBT,Fındıklı,Fındıklı,rule,
+FKP-FKP,Fetihkapı,Fetihkapı,rule,
+FLA-MR1,Florya aqua,Florya Aqua,rule,
+FLO-MR1,Florya,Florya,rule,
+FND-KBT,Fındıkzade,Fındıkzade,rule,
+FNR-FEN,Fener,Fener,rule,
+FNY-MR1,Feneryolu,Feneryolu,rule,
+FSK-FSK,Fıstıkağacı,Fıstıkağacı,rule,
+FUL-FUL,M7 FULYA,Fulya,rule,
+GEB-MR1,Gebze-1,Gebze,rule,
+GEB-MR2,Gebze-2,Gebze,rule,
+GLH-KBT,Gülhane,Gülhane,rule,
+GLS-GLS,Gülsuyu,Gülsuyu,rule,
+GNG-KBT,Güngören,Güngören,rule,
+GNT-KBT,Güneştepe,Güneştepe,rule,
+GOK-GOK,GÖKTÜRK,Göktürk,rule,
+GRT-GRT,M2 Gayrettepe,Gayrettepe,checked,Morks: kept
+GTE-GT1,GÖZTEPE BATI,Göztepe Mahallesi,checked,"Morks: M7 in Bağcılar, not Kadıköy Göztepe"
+GTE-GT2,GÖZTEPE DOĞU,Göztepe Mahallesi,checked,"Morks: M7 in Bağcılar, not Kadıköy Göztepe"
+GTP-GTP,Gayrettepe,Gayrettepe,checked,Morks: kept
+GTP-GYT,GAYRETTEPE,Gayrettepe,checked,Morks: kept
+GUZ-MR1,Güzelyalı,Güzelyalı,rule,
+GZP-GZP,Göztepe,Göztepe,checked,Morks: kept
+GZT-MR1,Göztepe,Göztepe,checked,Morks: kept
+HAL-HLK,Halkalı,Halkalı,checked,Morks: kept
+HAL-MR1,Halkalı,Halkalı,checked,Morks: kept
+HAZ-HAZ,Haznedar,Haznedar,rule,
+HC1-HC1,Hacıosman,Hacıosman,rule,
+HC1-HC2,Hacıosman 2 Kuzey,Hacıosman,rule,
+HCS-HCS,Hacı Şükrü,Hacı Şükrü,rule,
+HL1-HL1,HAVALİMANI (TERMİNAL 1),İstanbul Havalimanı,checked,Morks: M11 airport terminal
+HL3-HL3,HAVALİMANI (KARGO TERMİNALİ ),Kargo Terminali,checked,Morks: M11 separate station
+HLC-HL1,Haliç güney,Haliç,checked,Morks: kept
+HLC-HL2,Haliç kuzey,Haliç,checked,Morks: kept
+HLC-KKP,Küçükpazar,Küçükpazar,checked,Morks: kept
+HLL-HL1,HALKALI GÜNEY,Halkalı Caddesi,checked,"Morks: M9 station, not Marmaray Halkalı"
+HLL-HL2,HALKALI KUZEY,Halkalı Caddesi,checked,"Morks: M9 station, not Marmaray Halkalı"
+HSD-HSD,HASDAL,Hasdal,rule,
+HSK-KBT,Haseki,Haseki,rule,
+HST-HS1,Hastane (Doğu/Adliye),Hastane,rule,
+HST-HS2,Hastane (Batı),Hastane,rule,
+HUZ-HUZ,HUZUR,Huzur,rule,
+HZE-HZE,Huzurevi,Huzurevi,rule,
+ICK-ICK,İÇERENKÖY,İçerenköy,rule,
+ICM-MR1,İçmeler,İçmeler,rule,
+IDT-MR1,İdealtepe,İdealtepe,rule,
+IHL-IHL,İmam Hatip Lisesi,İmam Hatip Lisesi,rule,
+IHS-IHS,İHSANİYE,İhsaniye,rule,
+IHY-IHY,29 EKİM CUMHURİYET-İHLAS YUVA,29 Ekim Cumhuriyet,checked,Morks: M9 official name
+IKI-IKI,Ihlamurkuyu,Ihlamurkuyu,rule,
+IKT-IKT,İkitelli Sanayi,İkitelli Sanayi,rule,
+IKT-IM9,İKİTELLİ SANAYİ,İkitelli Sanayi,rule,
+IKY-IKY,İlkyuva,İlkyuva,rule,
+IMS-IMS,İMES,İmes,rule,
+ISP-ISP,Ispartakule,Ispartakule,rule,
+ITC-ITC,İstoç,İstoç,rule,
+ITU-I1U,İTÜ kuzey,İtü,rule,
+ITU-ITU,İTÜ Güney,İtü,rule,
+KAD-KD1,Kadıköy (Doğu),Kadıköy,rule,
+KAD-KD2,Kadıköy (Batı),Kadıköy,rule,
+KAR-KBT,Karaköy,Karaköy,checked,Morks: kept
+KAR-KHC,KARAKOY,Karaköy,checked,Morks: one-day spelling variant
+KAR-TKK,Karaköy,Karaköy,checked,Morks: kept
+KAY-MR1,Kaynarca,Kaynarca,rule,
+KBK-KBK,KÜÇÜKBAKKALKÖY,Küçükbakkalköy,rule,
+KCC-MR1,Küçükçekmece,Küçükçekmece,rule,
+KCL-KCL,Küçükyalı,Küçükyalı,checked,Morks: kept
+KCS-KCS,KAZLIÇEŞME,Kazlıçeşme,rule,
+KCS-MR1,Kazlıçeşme,Kazlıçeşme,rule,
+KCY-MR1,Küçükyalı-1,Küçükyalı,checked,Morks: kept
+KCY-MR2,Küçükyalı-2,Küçükyalı,checked,Morks: kept
+KDE-EKD,Kadıköy Çayırbaşı,Kadıköy Çayırbaşı,rule,
+KDG-KDG,KAYIŞDAĞI,Kayışdağı,rule,
+KGH-KG1,KAĞITHANE DOGU,Kağıthane,rule,
+KGH-KG2,KAĞITHANE BATI,Kağıthane,rule,
+KGH-KGT,KAĞITHANE,Kağıthane,rule,
+KKB-KKB,KAZIMKARABEKİR,Kazımkarabekir,rule,
+KKY-KKY,Kurtköy,Kurtköy,rule,
+KMK-KMK,KUMKAPI,Kumkapı,rule,
+KMP-KMP,KOCA MUSTAFA PAŞA,Koca Mustafa Paşa,rule,
+KMR-KMR,KEMERBURGAZ,Kemerburgaz,rule,
+KRL-KR1,Kartal (Doğu),Kartal,checked,Morks: kept
+KRL-KR2,Kartal (Batı),Kartal,checked,Morks: kept
+KRM-KRM,Karadeniz Mahallesi,Karadeniz Mahallesi,rule,
+KRP-KRP,Kartaltepe,Kartaltepe,rule,
+KRS-KBT,Keresteciler,Keresteciler,rule,
+KRZ-KRZ,Kirazlı,Kirazlı,rule,
+KRZ-KZL,Kirazlı,Kirazlı,rule,
+KSK-KSK,Kısıklı,Kısıklı,rule,
+KTL-MR1,Kartal,Kartal,checked,Morks: kept
+KTS-KTA,Kabataş,Kabataş,rule,
+KTS-KTT,Kabataş 2,Kabataş,rule,
+KTS-TKS,Kabataş,Kabataş,rule,
+KYS-KYS,Kayaşehir Merkez,Kayaşehir Merkez,rule,
+KYT-KYT,Kozyatağı,Kozyatağı,rule,
+KYT-KZY,KOZYATAĞI,Kozyatağı,rule,
+L1S-L1S,Sanayi Mah. Kuzey,Sanayi Mahallesi,checked,Morks: M2 station
+L24-L24,4 Levent Kuzey,4. Levent,checked,Morks: M2 station
+L44-L44,4 Levent 2 Güney,4. Levent,checked,Morks: M2 station
+LAL-KBT,Laleli,Laleli,rule,
+LMV-LMV,M2 Levent,Levent,checked,Morks: kept
+LVT-L21,Levent 2 Kuzey,Levent,checked,Morks: kept
+LVT-LVB,Levent Batı konkors,Levent,checked,Morks: kept
+LVT-LVD,Levent Doğu konkors,Levent,checked,Morks: kept
+LVT-LVT,Levent Güney,Levent,checked,Morks: kept
+LYS-LYS,Sanayi Mah. Güney,Sanayi Mahallesi,checked,Morks: M2 station
+MAF-KBT,MehmetAkif,Mehmetakif,rule,
+MAS-MAS,MASKO,Masko,rule,
+MCD-MC1,MECİDİYEKÖY BATI,Şişli-Mecidiyeköy,checked,Morks: M2 Şişli-Mecidiyeköy + M7 Mecidiyeköy transfer
+MCD-MC2,MECİDİYEKÖY DOĞU,Şişli-Mecidiyeköy,checked,Morks: M2 Şişli-Mecidiyeköy + M7 Mecidiyeköy transfer
+MCD-S2L,Şişli 2 Kuzey,Şişli-Mecidiyeköy,checked,Morks: M2 Şişli-Mecidiyeköy + M7 Mecidiyeköy transfer
+MCD-SSL,Şişli Güney,Şişli-Mecidiyeköy,checked,Morks: M2 Şişli-Mecidiyeköy + M7 Mecidiyeköy transfer
+MCK-MCK,Maçka,Maçka,rule,
+MCS-MCS,Meclis,Meclis,rule,
+MDK-MDK,MODOKO KEYAP,Modoko Keyap,rule,
+MDR-MDR,Menderes,Menderes,rule,
+MER-MER,Merter,Merter,rule,
+MHY-MH1,MAHMUTBEY M7 HOL 1,Mahmutbey,rule,
+MHY-MH2,MAHMUTBEY M7 HOL 2,Mahmutbey,rule,
+MHY-MH3,MAHMUTBEY M3 HOL 3,Mahmutbey,rule,
+MHY-MH4,MAHMUTBEY M3 HOL 4,Mahmutbey,rule,
+MHY-MHY,Mahmutbey,Mahmutbey,rule,
+MHY-MT1,Mahmutbey M7 Hol 1,Mahmutbey,rule,
+MHY-MT2,Mahmutbey M7 Hol 2,Mahmutbey,rule,
+MHY-MT3,Mahmutbey M7 Hol 3,Mahmutbey,rule,
+MHY-MT4,Mahmutbey M7 Hol 4,Mahmutbey,rule,
+MKE-MR1,M.kemal,M.kemal,rule,
+MLG-MLG,Molla Gürani,Molla Gürani,rule,
+MLP-MLP,Maltepe,Maltepe,checked,Morks: kept
+MLT-MR1,Maltepe,Maltepe,checked,Morks: kept
+MMS-MM1,MİMAR SİNAN,Mimar Sinan,rule,
+MPS-KBT,Mithatpaşa,Mithatpaşa,rule,
+MRE-KBT,Merkezefendi,Merkezefendi,rule,
+MRS-KD1,KARADENİZ MAH. BATI,Karadeniz Mahallesi,checked,Morks: M7; KRM is a short-lived old code
+MRS-KD2,KARADENİZ MAH. DOĞU,Karadeniz Mahallesi,checked,Morks: M7; KRM is a short-lived old code
+MRS-KRM,Karadeniz Mah. Kod değişti,Karadeniz Mahallesi,checked,Morks: M7; KRM is a short-lived old code
+MRS-MR2,T4 KİPTAŞ VENEZİA,Kiptaş Venezia,checked,Morks: kept
+MRS-MRS,Kiptaş Venezia,Kiptaş Venezia,checked,Morks: kept
+MSL-MSL,Mescidi Selam,Mescidi Selam,rule,
+MTK-MTK,Metrokent,Metrokent,rule,
+MVL-MVL,MEVLANA,Mevlana,rule,
+NFI-NFI,Necip Fazıl,Necip Fazıl,rule,
+NRT-NR1,NURTEPE BATI,Nurtepe,rule,
+NRT-NR2,NURTEPE DOĞU,Nurtepe,rule,
+NSP-NSP,Nispetiye,Nispetiye,rule,
+O2Y-O2Y,Osmanbey 2 Güney,Osmanbey,checked,Morks: kept
+OBT-OBT,15.Tem,15 Temmuz,checked,Morks: M9; IBB text is an Excel date artefact
+OBY-OBY,Osmanbey Kuzey,Osmanbey,checked,Morks: kept
+OCR-OC1,ORUÇREİS BATI,Oruçreis,rule,
+OCR-OC2,ORUÇREİS DOĞU,Oruçreis,rule,
+OGA-AKS,Otogar,Otogar,rule,
+OGA-ESN,Otogar 1,Otogar,rule,
+OLP-OL1,OLİMPİYAT BATI,Olimpiyat,rule,
+OLP-OL2,OLİMPİYAT DOĞU,Olimpiyat,rule,
+ONR-ONR,Onurkent,Onurkent,rule,
+OSM-MR1,Osmangazi,Osmangazi,rule,
+OZM-OZG,Özgürlük Meydanı Güney,Özgürlük Meydanı,checked,"Morks: M3, spelling variants"
+OZM-OZK,Özgürlük Meydan Kuzey,Özgürlük Meydanı,checked,"Morks: M3, spelling variants"
+PEN-MR1,Pendik,Pendik,rule,
+PEN-PN1,Pendik (Doğu),Pendik,rule,
+PEN-PN2,Pendik (Batı),Pendik,rule,
+PLT-EYU,Pierloti,Pierloti,rule,
+PRS-PRS,PARSELLER,Parseller,rule,
+PTK-KBT,Pazartekke,Pazartekke,rule,
+RMI-RMI,Rami,Rami,rule,
+S1H-S1H,Şişhane Kuzey,Şişhane,checked,Morks: kept
+SAG-SAG,Sağmalcılar,Sağmalcılar,checked,Morks: kept
+SAH-KBT,Sultanahmet,Sultanahmet,rule,
+SCF-SCF,Sultançiftliği,Sultançiftliği,rule,
+SCM-MR1,Söğütlüçeşme,Söğütlüçeşme,rule,
+SCM-MR2,Söğütlüçeşme,Söğütlüçeşme,rule,
+SCT-SCT,Sancaktepe,Sancaktepe,rule,
+SDM-SDM,Samandıra Merkez,Samandıra Merkez,rule,
+SGH-SGH,Sabiha Gökçen Havalimanı,Sabiha Gökçen Havalimanı,rule,
+SGL-SGL,Soğanlık,Soğanlık,rule,
+SGN-KBT,Soğanlı,Soğanlı,rule,
+SGZ-SGZ,Sarıgazı,Sarıgazı,rule,
+SHR-SHR,Şehir Hastanesi,Şehir Hastanesi,rule,
+SHT-SHT,Şehitlik,Şehitlik,rule,
+SLA-SLA,Silahtarağa,Silahtarağa,rule,
+SML-SML,Sağmalcılar,Sağmalcılar,checked,Morks: kept
+SRE-ATK,Ataköy,Ataköy-Şirinevler,checked,"Morks: M1 station, different place from Marmaray/M9 Ataköy"
+SRY-MR1,Süreyya plajı,Süreyya Plajı,rule,
+SSH-SSH,Şişhane Güney,Şişhane,checked,Morks: kept
+ST1-ST1,Seyrantepe 1 Batı,Seyrantepe,checked,Morks: kept
+ST2-ST2,Seyrantepe 2 Doğu,Seyrantepe,checked,Morks: kept
+ST3-ST3,Seyrantepe 3 Stad Girişi,Seyrantepe,checked,Morks: M2 stadium entrance
+STR-STR,Siteler,Siteler,rule,
+SUA-MR1,Suadiye,Suadiye,rule,
+TAK-KBT,Taksim,Taksim,rule,
+TAK-TAK,Taksim Güney,Taksim,rule,
+TAS-GH1,TAŞOLUK   GUNEY,Taşoluk,rule,
+TAS-GH2,TAŞOLUK   KUZEY,Taşoluk,rule,
+TBO-TBO,Beyoğlu,Beyoğlu,rule,
+TER-MR1,Tersane-1,Tersane,checked,Morks: kept
+TER-MR2,Tersane-2,Tersane,checked,Morks: kept
+TER-TER,Terazidere,Terazidere,checked,Morks: kept
+THY-THY,Havaalanı,Havaalanı,rule,
+TOK-TOK,Toplu Konutlar,Toplu Konutlar,rule,
+TOL-TOL,Turgut Özal,Turgut Özal,rule,
+TPC-TPC,Topçular,Topçular,rule,
+TPH-KBT,Tophane,Tophane,rule,
+TPI-HBL,Topkapı,Topkapı,checked,Morks: kept
+TPK-KBT,Topkapı,Topkapı,checked,Morks: kept
+TSH-TSH,Taşköprü,Taşköprü,rule,
+TTK-TTK,TEKSTİLKENT,Tekstilkent,rule,
+TUZ-MR1,Tuzla,Tuzla,rule,
+TVT-TV1,Tavşantepe (Batı),Tavşantepe,rule,
+TVT-TV2,Tavşantepe (Doğu),Tavşantepe,rule,
+UIM-UIM,Üsküdar Meydan,Üsküdar Meydan,rule,
+ULU-ULU,Ulubatlı,Ulubatlı,rule,
+UMR-UMR,Ümraniye,Ümraniye,rule,
+UNI-UNI,Universite,Universite,rule,
+UNL-UNL,Ünalan,Ünalan,rule,
+USE-MR1,Üsküdar-1,Üsküdar,rule,
+USE-MR2,Üsküdar-2,Üsküdar,rule,
+USE-MR3,Üsküdar-3,Üsküdar,rule,
+USE-US1,Üsküdar 1,Üsküdar,rule,
+USE-US2,Üsküdar 2,Üsküdar,rule,
+USE-USA,Üsküdar,Üsküdar,rule,
+UYL-UYL,Üçyüzlü,Üçyüzlü,rule,
+VAT-HBL,Vatan,Vatan,rule,
+VSK-VS1,VEYSELKARANİ BATI,Veyselkarani,rule,
+VSK-VS2,VEYSELKARANİ DOĞU,Veyselkarani,rule,
+VZN-VZ1,Vezneciler Güney,Vezneciler,rule,
+VZN-VZ2,Vezneciler Kuzey,Vezneciler,rule,
+YBS-YBS,Yenibosna,Yenibosna,rule,
+YBS-YNB,YENİBOSNA,Yenibosna,rule,
+YDK-YDK,YEDİKULE,Yedikule,rule,
+YDT-YDT,Yıldıztepe,Yıldıztepe,rule,
+YED-MR1,Yeşilköy,Yeşilköy,rule,
+YEN-MR1,Yenimahalle,Yenimahalle (Marmaray),checked,"Morks: Marmaray in Bakırköy, different place from M7/T4 Yenimahalle"
+YEY-MR1,Yeşilyurt,Yeşilyurt,rule,
+YKC-YC1,Yakacık (Doğu),Yakacık,rule,
+YKC-YC2,Yakacık (Batı),Yakacık,rule,
+YLR-YLR,Yayalar,Yayalar,rule,
+YLZ-YL1,M7 YILDIZ 1,Yıldız,rule,
+YLZ-YL2,M7 YILDIZ 2,Yıldız,rule,
+YME-YME,Yamanevler,Yamanevler,rule,
+YML-YML,Yeni Mahalle,Yeni Mahalle,rule,
+YNK-MR1,Yenikapı-1,Yenikapı,rule,
+YNK-MR2,Yenikapı-2,Yenikapı,rule,
+YNK-MR3,Yenikapı-3,Yenikapı,rule,
+YNK-YN1,Yenikapı Güney,Yenikapı,rule,
+YNK-YN2,Yenikapı Kuzey,Yenikapı,rule,
+YNK-YNH,Yenikapı,Yenikapı,rule,
+YNK-YNK,YENİKAPI,Yenikapı,rule,
+YNL-YNL,YENİMAHALLE,Yenimahalle,checked,Morks: kept
+YNM-YNM,Yenimahalle,Yenimahalle,checked,Morks: kept
+YSP-YSP,YEŞİLPINAR,Yeşilpınar,rule,
+YSR-YSR,Yenisahra,Yenisahra,rule,
+YUN-MR1,Yunus,Yunus,rule,
+ZBR-MR1,Zeytinburnu,Zeytinburnu,checked,Morks: kept
+ZEY-KBT,Zeytinburnu 2,Zeytinburnu,checked,Morks: kept
+ZEY-ZEY,Zeytinburnu,Zeytinburnu,checked,Morks: kept
+ZGP-ZGP,ZİYA GÖKALP MAH,Ziya Gökalp Mahallesi,checked,Morks: M9/M3 official name

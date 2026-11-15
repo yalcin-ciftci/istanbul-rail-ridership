@@ -1,0 +1,281 @@
+version: 2
+models:
+- name: stg_rail_station_daily
+  description: >
+    Typed entrance-day ridership preserving every source row and repairing
+    Turkish mojibake in line, station and district names. Summed passenger_count
+    may count people more than once, especially in finer-grained 2021 and 2024;
+    compare years with journey_count. Line-level rows have no station and
+    appear only in fct_line_daily among the fact tables.
+  columns:
+  - name: row_key
+    description: Resource and source row identifier.
+    data_tests:
+    - unique
+    - not_null
+  - name: source_row_id
+    description: Original source row identifier.
+    data_tests:
+    - not_null
+  - name: resource_id
+    description: CKAN resource identifier.
+    data_tests:
+    - not_null
+  - name: ride_date
+    description: Date of rides.
+    data_tests:
+    - not_null
+  - name: line_name
+    description: Rail line name.
+    data_tests:
+    - not_null
+  - name: station_code
+    description: Source station code; null for line totals.
+  - name: station_name
+    description: Repaired station name; may also be null when a station code exists.
+  - name: is_line_level
+    description: Whether the source row is a line total without a station.
+    data_tests:
+    - not_null
+  - name: district
+    description: District name; empty values become null.
+  - name: longitude
+    description: Repaired longitude in decimal degrees.
+  - name: latitude
+    description: Repaired latitude in decimal degrees.
+  - name: journey_count
+    description: Number of journeys.
+    data_tests:
+    - not_null
+  - name: passenger_count
+    description: Number of passengers.
+    data_tests:
+    - not_null
+  - name: source_last_modified
+    description: Source modification timestamp.
+  - name: ingested_at
+    description: Ingestion timestamp with time zone.
+unit_tests:
+- name: test_repair_coordinate
+  model: stg_rail_station_daily
+  given:
+  - input: source('raw', 'rail_station_daily')
+    rows:
+    - _id: 1
+      transaction_year: '2025'
+      transaction_month: '1'
+      transaction_day: '1'
+      line: M8
+      station_name: Test
+      station_number: ABC-ABC
+      town: UMRANIYE
+      longitude: 289.335.555.555.556
+      latitude: 410.533.333.333.333
+      passage_cnt: '10'
+      passanger_cnt: '5'
+      resource_id: test-resource
+      source_last_modified: '2025-01-01 00:00:00'
+      ingested_at: '2025-01-01 00:00:00+00:00'
+    - _id: 2
+      transaction_year: '2025'
+      transaction_month: '1'
+      transaction_day: '1'
+      line: M8
+      station_name: Test
+      station_number: ABC-ABC
+      town: UMRANIYE
+      longitude: 29.163.224
+      latitude: '41.1'
+      passage_cnt: '10'
+      passanger_cnt: '5'
+      resource_id: test-resource
+      source_last_modified: '2025-01-01 00:00:00'
+      ingested_at: '2025-01-01 00:00:00+00:00'
+    - _id: 3
+      transaction_year: '2025'
+      transaction_month: '1'
+      transaction_day: '1'
+      line: M8
+      station_name: Test
+      station_number: ABC-ABC
+      town: UMRANIYE
+      longitude: 291.636.965
+      latitude: '41.1'
+      passage_cnt: '10'
+      passanger_cnt: '5'
+      resource_id: test-resource
+      source_last_modified: '2025-01-01 00:00:00'
+      ingested_at: '2025-01-01 00:00:00+00:00'
+    - _id: 4
+      transaction_year: '2025'
+      transaction_month: '1'
+      transaction_day: '1'
+      line: M8
+      station_name: Test
+      station_number: ABC-ABC
+      town: UMRANIYE
+      longitude: '29.0'
+      latitude: '41.0'
+      passage_cnt: '10'
+      passanger_cnt: '5'
+      resource_id: test-resource
+      source_last_modified: '2025-01-01 00:00:00'
+      ingested_at: '2025-01-01 00:00:00+00:00'
+    - _id: 5
+      transaction_year: '2025'
+      transaction_month: '1'
+      transaction_day: '1'
+      line: M8
+      station_name: Test
+      station_number: ABC-ABC
+      town: UMRANIYE
+      longitude: '29'
+      latitude: '41'
+      passage_cnt: '10'
+      passanger_cnt: '5'
+      resource_id: test-resource
+      source_last_modified: '2025-01-01 00:00:00'
+      ingested_at: '2025-01-01 00:00:00+00:00'
+    - _id: 6
+      transaction_year: '2025'
+      transaction_month: '1'
+      transaction_day: '1'
+      line: M8
+      station_name: Test
+      station_number: ABC-ABC
+      town: UMRANIYE
+      longitude: 4.101.234
+      latitude: 4.101.234
+      passage_cnt: '10'
+      passanger_cnt: '5'
+      resource_id: test-resource
+      source_last_modified: '2025-01-01 00:00:00'
+      ingested_at: '2025-01-01 00:00:00+00:00'
+    - _id: 7
+      transaction_year: '2025'
+      transaction_month: '1'
+      transaction_day: '1'
+      line: M8
+      station_name: Test
+      station_number: ABC-ABC
+      town: UMRANIYE
+      longitude: null
+      latitude: null
+      passage_cnt: '10'
+      passanger_cnt: '5'
+      resource_id: test-resource
+      source_last_modified: '2025-01-01 00:00:00'
+      ingested_at: '2025-01-01 00:00:00+00:00'
+    - _id: 8
+      transaction_year: '2025'
+      transaction_month: '1'
+      transaction_day: '1'
+      line: M8
+      station_name: Test
+      station_number: ABC-ABC
+      town: UMRANIYE
+      longitude: ''
+      latitude: ''
+      passage_cnt: '10'
+      passanger_cnt: '5'
+      resource_id: test-resource
+      source_last_modified: '2025-01-01 00:00:00'
+      ingested_at: '2025-01-01 00:00:00+00:00'
+    - _id: 9
+      transaction_year: '2025'
+      transaction_month: '1'
+      transaction_day: '1'
+      line: M8
+      station_name: Test
+      station_number: ABC-ABC
+      town: UMRANIYE
+      longitude: '28.5'
+      latitude: '40.9'
+      passage_cnt: '10'
+      passanger_cnt: '5'
+      resource_id: test-resource
+      source_last_modified: '2025-01-01 00:00:00'
+      ingested_at: '2025-01-01 00:00:00+00:00'
+    - _id: 10
+      transaction_year: '2025'
+      transaction_month: '1'
+      transaction_day: '1'
+      line: M8
+      station_name: Test
+      station_number: ABC-ABC
+      town: UMRANIYE
+      longitude: '29.Eyl'
+      latitude: '409.845.555.555.556'
+      passage_cnt: '10'
+      passanger_cnt: '5'
+      resource_id: test-resource
+      source_last_modified: '2025-01-01 00:00:00'
+      ingested_at: '2025-01-01 00:00:00+00:00'
+    - _id: 11
+      transaction_year: '2025'
+      transaction_month: '1'
+      transaction_day: '1'
+      line: M8
+      station_name: Test
+      station_number: ABC-ABC
+      town: UMRANIYE
+      longitude: '29.1'
+      latitude: null
+      passage_cnt: '10'
+      passanger_cnt: '5'
+      resource_id: test-resource
+      source_last_modified: '2025-01-01 00:00:00'
+      ingested_at: '2025-01-01 00:00:00+00:00'
+    - _id: 12
+      transaction_year: '2025'
+      transaction_month: '1'
+      transaction_day: '1'
+      line: M8
+      station_name: Test
+      station_number: ABC-ABC
+      town: UMRANIYE
+      longitude: '.'
+      latitude: '41.1'
+      passage_cnt: '10'
+      passanger_cnt: '5'
+      resource_id: test-resource
+      source_last_modified: '2025-01-01 00:00:00'
+      ingested_at: '2025-01-01 00:00:00+00:00'
+  expect:
+    rows:
+    - source_row_id: 1
+      longitude: 28.9335555555556
+      latitude: 41.0533333333333
+    - source_row_id: 2
+      longitude: 29.163224
+      latitude: 41.1
+    - source_row_id: 3
+      longitude: 29.1636965
+      latitude: 41.1
+    - source_row_id: 4
+      longitude: 29.0
+      latitude: 41.0
+    - source_row_id: 5
+      longitude: 29.0
+      latitude: 41.0
+    - source_row_id: 6
+      longitude: 41.01234
+      latitude: 41.01234
+    - source_row_id: 7
+      longitude: null
+      latitude: null
+    - source_row_id: 8
+      longitude: null
+      latitude: null
+    - source_row_id: 9
+      longitude: 28.5
+      latitude: 40.9
+    - source_row_id: 10
+      longitude: null
+      latitude: null
+    - source_row_id: 11
+      longitude: null
+      latitude: null
+    - source_row_id: 12
+      longitude: null
+      latitude: null

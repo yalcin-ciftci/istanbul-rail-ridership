@@ -1,0 +1,27 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+.uv-cache/
+
+# Veri ve yerel çıktılar (depoya girmez; kaynak İBB'den yeniden çekilir)
+data/
+*.duckdb
+*.duckdb.wal
+logs/
+
+# dbt çıktıları
+transform/target/
+transform/dbt_packages/
+transform/logs/
+
+# Test temp/cache
+.pytest-tmp/
+.pytest_cache/
+.ruff_cache/

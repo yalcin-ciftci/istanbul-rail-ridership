@@ -1,0 +1,7 @@
+istanbul_ulasim:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('ULASIM_DUCKDB_PATH', 'data/ulasim.duckdb') }}"
+      threads: 1

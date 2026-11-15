@@ -1,0 +1,74 @@
+version: 2
+
+seeds:
+  - name: station_group_map
+    description: >
+      Station-code mapping to physical station complexes for human review.
+      Groups are a reviewed mapping, not an official IBB field; flagged rows
+      remain provisional until a reviewer marks them checked.
+      Same name in the same area → one group (transfer stations included);
+      same name in a different place → separate groups;
+      official station names where the IBB name is truncated.
+    columns:
+      - name: station_code
+        description: Entrance/platform-level station code used to join dim_station.
+        data_tests: [unique, not_null]
+      - name: station_name
+        description: Source name when drafted, for reviewers only; not used to join models.
+      - name: station_group
+        description: Physical complex display name; empty means no assigned group.
+      - name: status
+        description: Rule assignment, flagged for review, or checked by a person.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['rule', 'flagged', 'checked']
+      - name: note
+        description: Review reasons separated by semicolons, or the reviewer's retained note.
+
+models:
+  - name: dim_station_group
+    description: >
+      One row per non-NULL physical station complex from the reviewed mapping,
+      not an official IBB field. Includes provisional flagged assignments.
+    columns:
+      - name: station_group
+        description: Physical station complex name from the reviewed mapping, not an IBB field.
+      - name: station_codes
+        description: Comma-separated station codes in ascending order.
+      - name: station_code_count
+        description: Number of distinct station codes assigned to the complex.
+      - name: line_names
+        description: Comma-separated distinct lines observed in fct_station_daily, sorted.
+      - name: districts
+        description: Comma-separated distinct non-NULL districts of member codes, sorted.
+      - name: first_seen_date
+        description: Earliest observation date among member station codes.
+      - name: last_seen_date
+        description: Latest observation date among member station codes.
+  - name: fct_station_group_daily
+    description: >
+      One row per date and physical station complex, summing fct_station_daily
+      across member codes and lines. Groups are a reviewed mapping, not an IBB
+      field, and flagged assignments are provisional. Codes without a group
+      are excluded and counted by warn_station_group_missing. Passenger counts
+      may double count a person; use journey_count for comparisons across years.
+      Between 2022-03-28 and 2022-11-02 source journeys appear doubled; use
+      journey_count_estimated and state that it is an estimate.
+    columns:
+      - name: ride_date
+        description: Date of journeys; together with station_group forms the grain.
+      - name: station_group
+        description: Physical station complex from the reviewed mapping, not an IBB field.
+      - name: journey_count
+        description: Sum of source journeys over member codes and lines; use across years.
+      - name: journey_count_estimated
+        description: >
+          Sum of estimated journeys. For suspect 2022 source days this uses
+          journey_count / 2; an estimate, not an official IBB figure.
+      - name: passenger_count
+        description: Sum over codes and lines; may count the same person more than once.
+      - name: has_suspect_journeys
+        description: True when any member station/line row has suspect journeys.
+      - name: line_count
+        description: Number of distinct lines observed for the complex on this date.

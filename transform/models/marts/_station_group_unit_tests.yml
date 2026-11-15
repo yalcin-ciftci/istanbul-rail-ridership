@@ -1,0 +1,22 @@
+version: 2
+
+unit_tests:
+  - name: test_station_group_daily_aggregates_codes_excludes_ungrouped
+    model: fct_station_group_daily
+    given:
+      - input: ref('dim_station')
+        rows:
+          - {station_code: A, station_group: Shared}
+          - {station_code: B, station_group: Shared}
+          - {station_code: C, station_group: null}
+      - input: ref('fct_station_daily')
+        rows:
+          - {ride_date: '2022-04-01', station_code: A, line_name: M1, journey_count: 20, journey_count_estimated: 10, passenger_count: 4, has_suspect_journeys: true}
+          - {ride_date: '2022-04-01', station_code: B, line_name: M1, journey_count: 30, journey_count_estimated: 30, passenger_count: 6, has_suspect_journeys: false}
+          - {ride_date: '2022-04-01', station_code: B, line_name: M2, journey_count: 7, journey_count_estimated: 7, passenger_count: 2, has_suspect_journeys: false}
+          - {ride_date: '2022-04-01', station_code: C, line_name: M1, journey_count: 100, journey_count_estimated: 100, passenger_count: 50, has_suspect_journeys: true}
+          - {ride_date: '2025-01-01', station_code: A, line_name: M1, journey_count: 3, journey_count_estimated: 3, passenger_count: 1, has_suspect_journeys: false}
+    expect:
+      rows:
+        - {ride_date: '2022-04-01', station_group: Shared, journey_count: 57, journey_count_estimated: 47, passenger_count: 12, has_suspect_journeys: true, line_count: 2}
+        - {ride_date: '2025-01-01', station_group: Shared, journey_count: 3, journey_count_estimated: 3, passenger_count: 1, has_suspect_journeys: false, line_count: 1}

@@ -1,0 +1,5 @@
+# Project-level Codex config. Codex applies it only when this project is trusted.
+
+[agents.reviewer]
+description = "Read-only milestone reviewer: correctness, data integrity, regressions, missing tests, security."
+config_file = "agents/reviewer.toml"

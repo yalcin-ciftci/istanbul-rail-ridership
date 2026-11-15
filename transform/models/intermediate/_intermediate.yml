@@ -1,0 +1,73 @@
+version: 2
+
+models:
+  - name: int_rail_entrance_deduped
+    description: >
+      Entrance-day rows deduplicated on resource, date, line, station code,
+      station name, district, coordinate pair and both counts, treating NULLs
+      as equal. Keep the smallest source_row_id. Line-level rows are retained
+      for fct_line_daily. Summed passenger_count may count people more than once,
+      especially in finer-grained 2021 and 2024; compare years with journey_count.
+
+  - name: int_journey_quality_daily
+    description: >
+      One row per ride_date from deduplicated entrances. Flag days when at least
+      99 percent of journey counts are even and total journeys / total passengers
+      is at least 1.8. A zero passenger total yields a NULL ratio.
+    columns:
+      - name: ride_date
+        data_tests: [not_null, unique]
+      - name: row_count
+        description: Number of deduplicated entrance rows on the day.
+      - name: even_share
+        description: Share of entrance rows with an even journey_count.
+      - name: journey_passenger_ratio
+        description: Total journey_count divided by total passenger_count.
+      - name: journey_suspect
+        description: Whether both daily anomaly thresholds are met.
+  - name: int_rail_entrance_daily
+    description: >
+      Deduplicated entrance-day rows joined to daily journey quality. Retains all
+      source counts and line-level rows; appends an anomaly flag and estimate.
+      Summed passenger_count may count people more than once, especially in 2021
+      and 2024. Journey estimates are not official IBB figures.
+    columns:
+      - name: journey_suspect
+        description: Daily anomaly flag from int_journey_quality_daily.
+      - name: journey_count_estimated
+        description: "ESTIMATE. Equals journey_count except on days flagged journey_suspect (2022 source anomaly: journey counts appear multiplied by 2), where it is journey_count / 2. Not an official IBB figure."
+
+unit_tests:
+  - name: test_exact_duplicates_keep_smallest_id
+    model: int_rail_entrance_deduped
+    given:
+      - input: ref('stg_rail_station_daily')
+        rows:
+          - {row_key: 'r:9', source_row_id: 9, resource_id: r, ride_date: '2024-01-01', line_name: M4, station_code: S, station_name: null, district: null, longitude: null, latitude: null, journey_count: 10, passenger_count: 5}
+          - {row_key: 'r:2', source_row_id: 2, resource_id: r, ride_date: '2024-01-01', line_name: M4, station_code: S, station_name: null, district: null, longitude: null, latitude: null, journey_count: 10, passenger_count: 5}
+          - {row_key: 'r:3', source_row_id: 3, resource_id: r, ride_date: '2024-01-01', line_name: M4, station_code: S, station_name: null, district: null, longitude: null, latitude: null, journey_count: 11, passenger_count: 5}
+          - {row_key: 'other:1', source_row_id: 1, resource_id: other, ride_date: '2024-01-01', line_name: M4, station_code: S, station_name: null, district: null, longitude: null, latitude: null, journey_count: 10, passenger_count: 5}
+    expect:
+      rows:
+        - {row_key: 'r:2'}
+        - {row_key: 'r:3'}
+        - {row_key: 'other:1'}
+
+  - name: test_journey_quality_rule
+    model: int_journey_quality_daily
+    given:
+      - input: ref('int_rail_entrance_deduped')
+        rows:
+          - {ride_date: '2022-04-01', journey_count: 210, passenger_count: 100}
+          - {ride_date: '2022-04-01', journey_count: 210, passenger_count: 100}
+          - {ride_date: '2022-04-02', journey_count: 210, passenger_count: 100}
+          - {ride_date: '2022-04-02', journey_count: 211, passenger_count: 100}
+          - {ride_date: '2022-04-02', journey_count: 209, passenger_count: 100}
+          - {ride_date: '2022-04-02', journey_count: 210, passenger_count: 100}
+          - {ride_date: '2022-04-03', journey_count: 206, passenger_count: 200}
+          - {ride_date: '2022-04-03', journey_count: 206, passenger_count: 200}
+    expect:
+      rows:
+        - {ride_date: '2022-04-01', row_count: 2, even_share: 1.0, journey_passenger_ratio: 2.1, journey_suspect: true}
+        - {ride_date: '2022-04-02', row_count: 4, even_share: 0.5, journey_passenger_ratio: 2.1, journey_suspect: false}
+        - {ride_date: '2022-04-03', row_count: 2, even_share: 1.0, journey_passenger_ratio: 1.03, journey_suspect: false}
