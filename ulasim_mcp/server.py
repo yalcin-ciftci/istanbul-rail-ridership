@@ -1,5 +1,6 @@
 """İstanbul ulaşım verileri için salt okunur, stdio tabanlı MCP sunucusu."""
 
+import hashlib
 import math
 import os
 import sys
@@ -95,6 +96,35 @@ def _json_value(value: Any) -> Any:
     return str(value)
 
 
+def _data_version(con: duckdb.DuckDBPyConnection) -> dict[str, Any] | None:
+    exists = con.execute(
+        "SELECT count(*) FROM information_schema.tables "
+        "WHERE table_catalog = current_database() AND table_schema = ? AND table_name = ?",
+        ["marts", "dim_source_version"],
+    ).fetchone()[0]
+    if not exists:
+        return None
+    # MCP's analytical marts currently use only the daily dataset. Include hourly
+    # sources when hourly marts become available to these answers.
+    rows = con.execute(
+        "SELECT resource_id, source_month, source_sha256, stored_sha256, ingested_at "
+        "FROM marts.dim_source_version WHERE dataset = ?",
+        ["rail_station_daily"],
+    ).fetchall()
+    if not rows:
+        return None
+    keys = sorted(
+        f"{resource}|{month or ''}|{source or 'stored:' + stored}"
+        for resource, month, source, stored, _ in rows
+    )
+    return {
+        "kimlik": hashlib.sha256("\n".join(keys).encode("utf-8")).hexdigest()[:12],
+        "kaynak_sayisi": len(rows),
+        "kaynak_hash_eksik": sum(row[2] is None for row in rows),
+        "son_alim": _json_value(max(row[4] for row in rows)),
+    }
+
+
 def _schema(con: duckdb.DuckDBPyConnection) -> dict[str, Any]:
     contract = load_contract()
     tables = con.execute(
@@ -130,10 +160,15 @@ def _schema(con: duckdb.DuckDBPyConnection) -> dict[str, Any]:
             "SELECT min(ride_date), max(ride_date) FROM marts.fct_station_daily"
         ).fetchone()
         scope = {"min": _json_value(first), "max": _json_value(last)}
+    version = _data_version(con)
+    warnings = [rule["text_tr"] for rule in contract["rule"]]
+    if version is None:
+        warnings.append("Veri sürümü tablosu yok; analiz kopyasını yeniden üretin.")
     return {
         "tablolar": list(by_table.values()),
         "kapsam": scope,
-        "uyarilar": [rule["text_tr"] for rule in contract["rule"]],
+        "uyarilar": warnings,
+        "veri_surumu": version,
         "olcu_sozlesmesi": {
             "surum": contract["version"],
             "olculer": [
@@ -195,7 +230,9 @@ def sorgu(sql: str, satir_siniri: int = 200) -> dict[str, Any]:
             timer.join()
         if timed_out.is_set():
             return {"hata": f"Sorgu zaman aşımı: {timeout:g} saniye sınırı aşıldı."}
+        version = _data_version(con)
         return {
+            "veri_surumu": version["kimlik"] if version is not None else None,
             "kolonlar": columns,
             "satirlar": [[_json_value(value) for value in row] for row in rows[:limit]],
             "satir_sayisi": min(len(rows), limit),

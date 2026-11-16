@@ -1,3 +1,4 @@
+import hashlib
 import json
 from datetime import datetime
 
@@ -148,3 +149,54 @@ def test_table_schema(server):
         ("source_last_modified", "TIMESTAMP"),
         ("ingested_at", "TIMESTAMP WITH TIME ZONE"),
     ]
+
+
+def test_canonical_source_version(server, capsys):
+    server.resources["resource-a"].reverse()
+    assert server.run() == 0
+    landing = server.root / "data/landing/rail_station_daily/resource-a.jsonl"
+    first = landing.read_bytes()
+    expected = "".join(
+        json.dumps(r, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
+        for r in sorted(server.resources["resource-a"], key=lambda r: int(r["_id"]))
+    ).encode("utf-8")
+    assert first == expected
+    server.resources["resource-a"] = (
+        server.resources["resource-a"][2:] + server.resources["resource-a"][:2]
+    )
+    assert server.run() == 0
+    assert landing.read_bytes() == first
+    digest = hashlib.sha256(first).hexdigest()
+    with duckdb.connect(str(server.db)) as con:
+        assert con.execute(
+            "SELECT dataset, resource_id, source_month, source_sha256, stored_sha256, "
+            "stored_path, row_count, hash_note FROM raw.source_versions"
+        ).fetchall() == [
+            (
+                "rail_station_daily",
+                "resource-a",
+                None,
+                digest,
+                digest,
+                "data/landing/rail_station_daily/resource-a.jsonl",
+                5,
+                None,
+            )
+        ]
+    assert [row[:12] for row in server.rows()] == [
+        tuple(r[k] for k in rail_station_daily.API_COLUMNS)
+        for r in sorted(server.resources["resource-a"], key=lambda r: int(r["_id"]))
+    ]
+    assert f"sha256={digest[:12]}" in capsys.readouterr().out
+
+
+def test_source_version_rollback(server):
+    assert server.run() == 0
+    before = server.rows()
+    with duckdb.connect(str(server.db)) as con:
+        versions = con.execute("SELECT * FROM raw.source_versions").fetchall()
+        con.execute("ALTER TABLE raw.rail_station_daily ADD CONSTRAINT_unused INTEGER")
+    assert server.run() == 1
+    assert server.rows() == before
+    with duckdb.connect(str(server.db)) as con:
+        assert con.execute("SELECT * FROM raw.source_versions").fetchall() == versions

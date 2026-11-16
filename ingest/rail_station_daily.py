@@ -1,11 +1,13 @@
 """Load an IBB CKAN datastore resource into the raw DuckDB table."""
 
 import argparse
+import hashlib
 import json
 import os
 import re
 import sys
 import time
+from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -31,6 +33,86 @@ API_COLUMNS = {
     "passage_cnt": "VARCHAR",
     "passanger_cnt": "VARCHAR",
 }
+
+
+def create_source_versions(connection: duckdb.DuckDBPyConnection) -> None:
+    """Create the shared source fingerprint registry for both ingest scripts."""
+    connection.execute("CREATE SCHEMA IF NOT EXISTS raw")
+    connection.execute(
+        "CREATE TABLE IF NOT EXISTS raw.source_versions ("
+        "dataset VARCHAR NOT NULL, resource_id VARCHAR NOT NULL, source_month VARCHAR, "
+        "source_last_modified TIMESTAMP, source_sha256 VARCHAR, "
+        "stored_sha256 VARCHAR NOT NULL, stored_path VARCHAR NOT NULL, "
+        "row_count BIGINT NOT NULL, ingested_at TIMESTAMPTZ NOT NULL, hash_note VARCHAR)"
+    )
+
+
+def delete_source_version(
+    connection: duckdb.DuckDBPyConnection,
+    dataset: str,
+    resource_id: str,
+    source_month: str | None,
+) -> None:
+    """Remove one logical key inside the caller's transaction."""
+    connection.execute(
+        "DELETE FROM raw.source_versions WHERE dataset = ? AND resource_id = ? "
+        "AND source_month IS NOT DISTINCT FROM ?",
+        [dataset, resource_id, source_month],
+    )
+
+
+def write_source_version(
+    connection: duckdb.DuckDBPyConnection,
+    dataset: str,
+    resource_id: str,
+    source_month: str | None,
+    source_last_modified: str | datetime | None,
+    source_sha256: str | None,
+    stored_sha256: str,
+    stored_path: str,
+    row_count: int,
+    ingested_at: datetime,
+    hash_note: str | None = None,
+) -> None:
+    """Replace one fingerprint inside the caller's data transaction."""
+    delete_source_version(connection, dataset, resource_id, source_month)
+    connection.execute(
+        "INSERT INTO raw.source_versions (dataset, resource_id, source_month, "
+        "source_last_modified, source_sha256, stored_sha256, stored_path, row_count, "
+        "ingested_at, hash_note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+            dataset,
+            resource_id,
+            source_month,
+            source_last_modified,
+            source_sha256,
+            stored_sha256,
+            stored_path,
+            row_count,
+            ingested_at,
+            hash_note,
+        ],
+    )
+
+
+def file_sha256(path: Path) -> str:
+    """Hash a stored file with bounded memory."""
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        while chunk := stream.read(1024 * 1024):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def canonical_lines(records: list[dict]) -> Iterator[bytes]:
+    """Yield the canonical daily source bytes in numeric source-ID order."""
+    for record in sorted(records, key=lambda record: int(record["_id"])):
+        yield (
+            json.dumps(
+                record, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+            )
+            + "\n"
+        ).encode("utf-8")
 
 
 def resource_id_arg(value: str) -> str:
@@ -130,15 +212,19 @@ def main():
         )
         landing.parent.mkdir(parents=True, exist_ok=True)
         temporary = landing.with_suffix(".jsonl.tmp")
-        with temporary.open("w", encoding="utf-8", newline="\n") as stream:
-            for record in records:
-                stream.write(json.dumps(record, ensure_ascii=False) + "\n")
+        digest = hashlib.sha256()
+        with temporary.open("wb") as stream:
+            for line in canonical_lines(records):
+                stream.write(line)
+                digest.update(line)
+        source_hash = digest.hexdigest()
         os.replace(temporary, landing)
 
         db_path.parent.mkdir(parents=True, exist_ok=True)
         columns_sql = ", ".join(f"{name} {kind}" for name, kind in API_COLUMNS.items())
         names_sql = ", ".join(API_COLUMNS)
         with duckdb.connect(str(db_path)) as connection:
+            create_source_versions(connection)
             connection.execute("CREATE SCHEMA IF NOT EXISTS raw")
             connection.execute(
                 f"CREATE TABLE IF NOT EXISTS raw.rail_station_daily ({columns_sql}, "
@@ -170,12 +256,25 @@ def main():
                     raise RuntimeError(
                         f"Loaded row count mismatch: loaded={loaded} total={total}"
                     )
+                write_source_version(
+                    connection,
+                    "rail_station_daily",
+                    args.resource_id,
+                    None,
+                    last_modified,
+                    source_hash,
+                    source_hash,
+                    landing.relative_to(PROJECT_ROOT).as_posix(),
+                    loaded,
+                    ingested_at,
+                )
                 connection.execute("COMMIT")
             except Exception:
                 connection.execute("ROLLBACK")
                 raise
         print(
-            f"loaded={loaded} elapsed_seconds={time.perf_counter() - started:.2f} db={db_path}"
+            f"loaded={loaded} elapsed_seconds={time.perf_counter() - started:.2f} "
+            f"db={db_path} sha256={source_hash[:12]}"
         )
         return 0
     except (

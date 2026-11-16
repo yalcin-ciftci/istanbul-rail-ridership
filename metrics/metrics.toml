@@ -1,4 +1,4 @@
-version = 1
+version = 2
 
 [[metric]]
 id = "journey_count_estimated"
@@ -59,3 +59,7 @@ text_tr = "Hafta sonu Cumartesi–Pazar olarak tanımlanır; resmî tatiller ayr
 [[rule]]
 id = "source_license"
 text_tr = "Kaynak: İBB Açık Veri, İBB Açık Veri Lisansı (CC BY 4.0); kaynak belirtin."
+
+[[rule]]
+id = "data_version"
+text_tr = "Sayı verdiğin cevabın sonunda kullandığın veri sürümünü yaz (sorgu sonucundaki veri_surumu kimliği). Kimlik boşsa bunu söyle; aynı soru aynı kimlikte aynı sonucu vermelidir."

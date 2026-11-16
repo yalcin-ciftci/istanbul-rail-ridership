@@ -136,6 +136,29 @@ uv run python ulasim_mcp/server.py # stdio MCP: normally launched by an MCP clie
 
 The source database defaults to `data/ulasim.duckdb`. The dbt profile accepts `ULASIM_DUCKDB_PATH` to override it; the ingest script accepts `--db`. The publisher accepts `--source` and `--target`; its defaults resolve relative to the repository, independently of the working directory. It verifies row counts before atomically replacing `data/ulasim_analysis.duckdb`, leaving the previous copy intact on failure. Publish again after each successful build. The agent sees only cleaned marts, and can keep reading the published copy while ingest writes to the source database. Publishing itself requires the source writer to finish. If locations change, set the MCP server's `ULASIM_DB` to the publisher's target analysis file.
 
+## Data version
+
+Each ingest records the source SHA-256, stored-file SHA-256, repository-relative
+landing path, row count and ingestion timestamp in `raw.source_versions`, in the
+same transaction as the loaded rows. Daily sources use canonical UTF-8 JSONL
+(numeric `_id` order, sorted keys, compact JSON); hourly sources hash the CSV
+while downloading and separately hash the retained Parquet. The current versions
+are copied through `marts.dim_source_version` into the published analysis database.
+
+MCP `sema` reports `veri_surumu` metadata and successful `sorgu` responses include
+its 12-character identity. Only daily resources contribute while the analytical
+marts use daily data. The identity is the first 12 hexadecimal characters of
+SHA-256 over sorted `resource_id|source_month|source_sha256` lines joined with
+`\n` (empty month for daily sources). Missing source hashes use
+`stored:<stored_sha256>` instead. Answers containing numbers must cite this identity.
+
+For existing local data, run `uv run python tools/backfill_source_versions.py`
+before `dbt build` and publication. Backfill preserves known source hashes and
+does not change landing files. Old hourly CSVs were discarded, so those months
+have only a Parquet fingerprint, a NULL source hash and an explanatory note.
+Fingerprints identify the current source content; this registry does not archive
+previous versions of overwritten source files.
+
 ## Use it from Claude Code
 
 Copy [examples/claude-code/mcp.json](examples/claude-code/mcp.json) into your project's `.mcp.json` (merge `mcpServers` if a configuration already exists). Copy [examples/claude-code/ulasim.md](examples/claude-code/ulasim.md) into `.claude/agents/`. Replace every `<path-to-repo>` placeholder with your repository path. The example registers `ulasim` with stdio transport and the Windows virtual-environment interpreter; on macOS/Linux use `<path-to-repo>/.venv/bin/python` instead. Keep the server name `ulasim`: the agent's tools are named `mcp__ulasim__*`. The agent answers in Turkish.

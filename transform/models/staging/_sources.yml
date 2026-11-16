@@ -4,6 +4,29 @@ sources:
   schema: raw
   description: Unmodified IBB rail ridership data.
   tables:
+  - name: source_versions
+    description: Current content fingerprints committed with each loaded source.
+    columns:
+    - name: dataset
+      description: Ingest dataset, rail_station_daily or rail_hourly.
+    - name: resource_id
+      description: CKAN resource identifier within the logical version key.
+    - name: source_month
+      description: Hourly YYYY-MM month; NULL for daily resources.
+    - name: source_last_modified
+      description: Modification timestamp reported by CKAN.
+    - name: source_sha256
+      description: SHA-256 of canonical daily JSONL or downloaded hourly CSV; NULL for legacy hourly files.
+    - name: stored_sha256
+      description: SHA-256 of the stored landing file bytes.
+    - name: stored_path
+      description: Repository-relative landing file path using forward slashes.
+    - name: row_count
+      description: Number of rows loaded into the dataset raw table.
+    - name: ingested_at
+      description: Timestamp of the data ingestion, including time zone.
+    - name: hash_note
+      description: Reason for an unavailable source hash; otherwise NULL.
   - name: rail_station_daily
     description: Daily ridership per source entrance row.
     columns:

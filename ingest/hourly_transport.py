@@ -1,6 +1,7 @@
 """Download monthly IBB transport CSVs and retain rail rows in Parquet and DuckDB."""
 
 import argparse
+import hashlib
 import os
 import re
 import sys
@@ -10,6 +11,12 @@ from pathlib import Path
 
 import duckdb
 import httpx
+from rail_station_daily import (
+    create_source_versions,
+    delete_source_version,
+    file_sha256,
+    write_source_version,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 API_ROOT = "https://data.ibb.gov.tr/api/3/action/"
@@ -86,17 +93,19 @@ def package_resources(client: httpx.Client) -> list[dict]:
     raise RuntimeError("package_show exhausted retries")
 
 
-def download(client: httpx.Client, resource: dict, target: Path) -> int:
+def download(client: httpx.Client, resource: dict, target: Path) -> tuple[int, str]:
     part = target.with_suffix(".csv.part")
     try:
         for attempt in range(3):
             try:
                 downloaded = 0
+                digest = hashlib.sha256()
                 with client.stream("GET", resource["url"]) as response:
                     response.raise_for_status()
                     with part.open("wb") as stream:
                         for chunk in response.iter_bytes(chunk_size=1024 * 1024):
                             stream.write(chunk)
+                            digest.update(chunk)
                             downloaded += len(chunk)
                     content_length = response.headers.get("Content-Length")
                     if (
@@ -116,7 +125,7 @@ def download(client: httpx.Client, resource: dict, target: Path) -> int:
                         file=sys.stderr,
                     )
                 os.replace(part, target)
-                return downloaded
+                return downloaded, digest.hexdigest()
             except httpx.HTTPError as exc:
                 if not retryable(exc) or attempt == 2:
                     raise
@@ -127,6 +136,7 @@ def download(client: httpx.Client, resource: dict, target: Path) -> int:
 
 
 def create_tables(connection: duckdb.DuckDBPyConnection) -> None:
+    create_source_versions(connection)
     connection.execute("CREATE SCHEMA IF NOT EXISTS raw")
     definitions = ", ".join(f"{name} VARCHAR" for name in COLUMNS)
     connection.execute(
@@ -155,6 +165,7 @@ def load_month(
     parquet: Path,
     downloaded: int,
     url_month: str | None,
+    source_sha256: str,
 ) -> tuple[str, int, int, int]:
     temporary = parquet.with_suffix(".parquet.tmp")
     try:
@@ -258,6 +269,21 @@ def load_month(
                     resource.get("size"),
                 ],
             )
+            if total:
+                write_source_version(
+                    connection,
+                    "rail_hourly",
+                    resource["id"],
+                    month,
+                    resource["last_modified"],
+                    source_sha256,
+                    file_sha256(temporary),
+                    parquet.relative_to(PROJECT_ROOT).as_posix(),
+                    loaded,
+                    ingested_at,
+                )
+            else:
+                delete_source_version(connection, "rail_hourly", resource["id"], month)
             connection.execute("COMMIT")
         except Exception:
             connection.execute("ROLLBACK")
@@ -307,7 +333,7 @@ def process_month(
         landing = PROJECT_ROOT / "data/landing/hourly_transport"
         landing.mkdir(parents=True, exist_ok=True)
         csv_path = landing / f"{month}.csv"
-        downloaded = download(client, resource, csv_path)
+        downloaded, source_sha256 = download(client, resource, csv_path)
         status, total, rail, dates = load_month(
             connection,
             month,
@@ -316,6 +342,7 @@ def process_month(
             landing / f"rail_{month}.parquet",
             downloaded,
             url_month,
+            source_sha256,
         )
     print(
         f"month={month} status={status} total={total} rail={rail} dates={dates} "

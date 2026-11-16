@@ -1,3 +1,4 @@
+import hashlib
 import importlib.util
 import json
 import os
@@ -5,6 +6,7 @@ import subprocess
 import sys
 import time
 import tomllib
+from datetime import datetime
 from pathlib import Path
 
 import anyio
@@ -23,7 +25,9 @@ def test_sema_metric_contract(db, tmp_path, monkeypatch):
     contract = tomllib.loads(contract_path.read_text(encoding="utf-8"))
     monkeypatch.chdir(tmp_path)
     result = load_server().sema()
-    assert result["uyarilar"] == [rule["text_tr"] for rule in contract["rule"]]
+    assert result["uyarilar"] == [rule["text_tr"] for rule in contract["rule"]] + [
+        "Veri sürümü tablosu yok; analiz kopyasını yeniden üretin."
+    ]
     assert result["olcu_sozlesmesi"] == {
         "surum": contract["version"],
         "olculer": [
@@ -58,6 +62,67 @@ def load_server():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def test_data_version_missing_or_empty(db):
+    module = load_server()
+    assert module.sema()["veri_surumu"] is None
+    assert module.sorgu("SELECT 1")["veri_surumu"] is None
+    with duckdb.connect(str(db)) as con:
+        con.execute(
+            "CREATE TABLE marts.dim_source_version (dataset VARCHAR, resource_id VARCHAR, source_month VARCHAR, source_sha256 VARCHAR, stored_sha256 VARCHAR, ingested_at TIMESTAMPTZ)"
+        )
+    assert module.sema()["veri_surumu"] is None
+    assert module.sorgu("SELECT 1")["veri_surumu"] is None
+
+
+def test_data_version_formula_and_hourly_exclusion(db):
+    module = load_server()
+    with duckdb.connect(str(db)) as con:
+        con.execute(
+            "CREATE TABLE marts.dim_source_version (dataset VARCHAR, resource_id VARCHAR, source_month VARCHAR, source_sha256 VARCHAR, stored_sha256 VARCHAR, ingested_at TIMESTAMPTZ)"
+        )
+        con.executemany(
+            "INSERT INTO marts.dim_source_version VALUES (?, ?, ?, ?, ?, ?)",
+            [
+                (
+                    "rail_station_daily",
+                    "b",
+                    None,
+                    None,
+                    "b" * 64,
+                    "2026-11-15T10:00:00Z",
+                ),
+                (
+                    "rail_station_daily",
+                    "a",
+                    None,
+                    "a" * 64,
+                    "c" * 64,
+                    "2026-11-16T10:00:00Z",
+                ),
+            ],
+        )
+    expected = hashlib.sha256(
+        ("a||" + "a" * 64 + "\nb||stored:" + "b" * 64).encode()
+    ).hexdigest()[:12]
+    version = module.sema()["veri_surumu"]
+    assert {k: v for k, v in version.items() if k != "son_alim"} == {
+        "kimlik": expected,
+        "kaynak_sayisi": 2,
+        "kaynak_hash_eksik": 1,
+    }
+    assert datetime.fromisoformat(version["son_alim"]) == datetime.fromisoformat(
+        "2026-11-16T10:00:00+00:00"
+    )
+    assert module.sorgu("SELECT 1")["veri_surumu"] == expected
+    with duckdb.connect(str(db)) as con:
+        con.execute(
+            "INSERT INTO marts.dim_source_version VALUES ('rail_hourly', 'hour', '2024-01', ?, ?, now())",
+            ["d" * 64, "e" * 64],
+        )
+    assert module.sema()["veri_surumu"] == version
+    assert module.sorgu("SELECT 1")["veri_surumu"] == expected
 
 
 @pytest.fixture

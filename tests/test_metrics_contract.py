@@ -22,6 +22,11 @@ def contract():
 def test_contract_schema():
     data = contract()
     assert type(data["version"]) is int
+    assert data["version"] == 2
+    assert data["rule"][-1] == {
+        "id": "data_version",
+        "text_tr": "Sayı verdiğin cevabın sonunda kullandığın veri sürümünü yaz (sorgu sonucundaki veri_surumu kimliği). Kimlik boşsa bunu söyle; aynı soru aynı kimlikte aynı sonucu vermelidir.",
+    }
     for key in ("metric", "rule"):
         ids = [entry["id"] for entry in data[key]]
         assert len(ids) == len(set(ids))

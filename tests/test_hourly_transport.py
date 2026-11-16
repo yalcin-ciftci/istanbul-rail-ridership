@@ -478,3 +478,61 @@ def test_legacy_manifest_migration_preserves_old_rows(hourly):
     assert hourly.query(
         "SELECT metadata_bytes, bytes FROM raw.hourly_transport_months WHERE month = '2024-12'"
     ) == [(hourly.resources[2]["size"], hourly.resources[2]["size"])]
+
+
+def test_source_hashes_and_skip(hourly):
+    assert hourly.run() == 0
+    rows = hourly.query("SELECT * FROM raw.source_versions")
+    row = rows[0]
+    assert len(rows) == 1
+    assert row[:3] == ("rail_hourly", "resource-2024-01", "2024-01")
+    assert (
+        row[4]
+        == hashlib.sha256(
+            hourly.bodies["/download/hourly_transportation_202401.csv"]
+        ).hexdigest()
+    )
+    assert (
+        row[5]
+        == hashlib.sha256(
+            (hourly.landing / "rail_2024-01.parquet").read_bytes()
+        ).hexdigest()
+    )
+    assert row[6:8] == ("data/landing/hourly_transport/rail_2024-01.parquet", 2)
+    assert hourly.run() == 0
+    assert hourly.query("SELECT * FROM raw.source_versions") == rows
+
+
+def test_empty_removes_source_version(hourly):
+    assert hourly.run() == 0
+    hourly.bodies["/download/hourly_transportation_202401.csv"] = csv_bytes(
+        "2024-01", []
+    )
+    assert hourly.run("--month", "2024-01", "--force") == 0
+    assert hourly.query("SELECT * FROM raw.source_versions") == []
+
+
+def test_download_retry_hash_starts_fresh(tmp_path, monkeypatch):
+    module = importlib.import_module("hourly_transport")
+    monkeypatch.setattr(module.time, "sleep", lambda _: None)
+
+    class Broken(httpx.SyncByteStream):
+        def __iter__(self):
+            yield b"discarded" * 200000
+            raise httpx.ReadError("interrupted")
+
+    attempts = []
+    body = b"successful CSV bytes"
+
+    def handle(request):
+        attempts.append(request)
+        if len(attempts) == 1:
+            return httpx.Response(200, stream=Broken())
+        return httpx.Response(200, content=body)
+
+    with httpx.Client(transport=httpx.MockTransport(handle)) as client:
+        result = module.download(
+            client, {"url": "https://example.test/csv"}, tmp_path / "retry.csv"
+        )
+    assert result == (len(body), hashlib.sha256(body).hexdigest())
+    assert (tmp_path / "retry.csv").read_bytes() == body
