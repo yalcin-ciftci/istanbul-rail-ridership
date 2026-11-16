@@ -219,25 +219,86 @@ def score(cases: list[dict], answers: Path, golden_file: Path | None) -> int:
 AGENT_TOOLS = "mcp__ulasim__sema,mcp__ulasim__sorgu,mcp__ulasim__istasyon_bul"
 
 
-def agent_command(agent: str, question: str) -> list[str]:
+EXAMPLES = ROOT / "examples/claude-code"
+
+
+def prepare_workdir(workdir: Path) -> list[str]:
+    """Write the example agent and MCP config into an isolated directory.
+
+    Running from a directory outside any configured project keeps project hooks,
+    CLAUDE.md files and other MCP servers out of the agent's context. Returns the
+    extra CLI arguments that load only these two files.
+    """
+    workdir.mkdir(parents=True, exist_ok=True)
+    root = ROOT.as_posix()
+    mcp = (EXAMPLES / "mcp.json").read_text(encoding="utf-8")
+    (workdir / "mcp.json").write_text(
+        mcp.replace("<path-to-repo>", root), encoding="utf-8"
+    )
+    text = (EXAMPLES / "ulasim.md").read_text(encoding="utf-8")
+    text = text.replace("<path-to-repo>", root).replace("\r\n", "\n")
+    match = re.match(r"---\n(.*?)\n---\n(.*)", text, re.DOTALL)
+    if match is None:
+        raise ValueError("examples/claude-code/ulasim.md frontmatter okunamadı")
+    front = dict(line.split(": ", 1) for line in match[1].splitlines())
+    agents = {
+        front["name"]: {
+            "description": front["description"],
+            "prompt": match[2].strip(),
+            "tools": [tool.strip() for tool in front["tools"].split(",")],
+            "model": front["model"],
+        }
+    }
+    (workdir / "agents.json").write_text(
+        json.dumps(agents, ensure_ascii=False), encoding="utf-8"
+    )
+    return [
+        "--strict-mcp-config",
+        "--mcp-config",
+        str(workdir / "mcp.json"),
+        "--agents",
+        str(workdir / "agents.json"),
+    ]
+
+
+def agent_command(
+    agent: str, question: str, extra: list[str] | None = None
+) -> list[str]:
     """Build arguments without invoking a shell."""
-    return ["claude", "-p", "--agent", agent, f"--allowedTools={AGENT_TOOLS}", question]
+    return [
+        "claude",
+        "-p",
+        *(extra or []),
+        "--agent",
+        agent,
+        f"--allowedTools={AGENT_TOOLS}",
+        question,
+    ]
 
 
-def ask(cases: list[dict], answers: Path, agent: str, only: str | None) -> int:
+def ask(
+    cases: list[dict],
+    answers: Path,
+    agent: str,
+    only: str | None,
+    workdir: Path | None = None,
+) -> int:
     """Collect answers; record per-case process failures and continue."""
     selected = set(only.split(",")) if only else {case["id"] for case in cases}
     unknown = selected - {case["id"] for case in cases}
     if unknown:
         raise ValueError(f"Bilinmeyen vaka: {', '.join(sorted(unknown))}")
     answers.mkdir(parents=True, exist_ok=True)
+    extra = prepare_workdir(workdir) if workdir is not None else None
     for case in cases:
         if case["id"] not in selected:
             continue
-        command = agent_command(agent, case["question_tr"])
+        command = agent_command(agent, case["question_tr"], extra)
         try:
             result = subprocess.run(
                 command,
+                cwd=workdir,
+                stdin=subprocess.DEVNULL,
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
@@ -271,6 +332,11 @@ def main(argv: list[str] | None = None) -> int:
         if name == "ask":
             sub.add_argument("--agent", default="ulasim")
             sub.add_argument("--only")
+            sub.add_argument(
+                "--workdir",
+                help="isolated directory outside any Claude project; loads only "
+                "the example agent and MCP config (recommended)",
+            )
     args = parser.parse_args(argv)
     try:
         cases = load_cases(repo_path(args.cases))
@@ -282,7 +348,13 @@ def main(argv: list[str] | None = None) -> int:
                 repo_path(args.answers),
                 repo_path(args.golden) if args.golden else None,
             )
-        return ask(cases, repo_path(args.answers), args.agent, args.only)
+        return ask(
+            cases,
+            repo_path(args.answers),
+            args.agent,
+            args.only,
+            Path(args.workdir).resolve() if args.workdir else None,
+        )
     except (OSError, ValueError, KeyError, TypeError, duckdb.Error) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1

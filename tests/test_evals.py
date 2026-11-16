@@ -310,3 +310,56 @@ def test_ask_only_and_process_error(fixture_eval, monkeypatch):
     )
     assert not (answers / "total.md").exists()
     assert "ERROR:" in (answers / "scope.md").read_text("utf-8")
+
+
+def test_ask_workdir_isolates_agent_and_mcp(fixture_eval, monkeypatch, tmp_path):
+    runner = implementation("run_eval")
+    _, cases, _, answers = fixture_eval
+    workdir = tmp_path / "clean"
+    calls = []
+
+    def fake_run(args, **kwargs):
+        calls.append((args, kwargs))
+        return subprocess.CompletedProcess(args, 0, "Kapsam yok", "")
+
+    monkeypatch.setattr(runner.subprocess, "run", fake_run)
+    args = ["ask", "--answers", str(answers), "--cases", str(cases)]
+    assert runner.main(args + ["--only", "scope", "--workdir", str(workdir)]) == 0
+    command, kwargs = calls[0]
+    assert kwargs["cwd"] == workdir.resolve()
+    assert kwargs["stdin"] is subprocess.DEVNULL
+    assert command[:7] == [
+        "claude",
+        "-p",
+        "--strict-mcp-config",
+        "--mcp-config",
+        str(workdir.resolve() / "mcp.json"),
+        "--agents",
+        str(workdir.resolve() / "agents.json"),
+    ]
+    assert command[-3:] == ["ulasim", f"--allowedTools={runner.AGENT_TOOLS}", "Dün?"]
+    mcp = json.loads((workdir / "mcp.json").read_text("utf-8"))
+    server = mcp["mcpServers"]["ulasim"]
+    assert "<path-to-repo>" not in json.dumps(mcp)
+    assert server["args"][-1] == f"{ROOT.as_posix()}/ulasim_mcp/server.py"
+    agent = json.loads((workdir / "agents.json").read_text("utf-8"))["ulasim"]
+    assert agent["tools"] == runner.AGENT_TOOLS.split(",")
+    assert agent["model"] == "sonnet"
+    assert agent["prompt"].startswith("Sen İstanbul raylı sistem")
+    assert "<path-to-repo>" not in agent["prompt"]
+
+
+def test_ask_without_workdir_keeps_current_directory(fixture_eval, monkeypatch):
+    runner = implementation("run_eval")
+    _, cases, _, answers = fixture_eval
+    calls = []
+
+    def fake_run(args, **kwargs):
+        calls.append((args, kwargs))
+        return subprocess.CompletedProcess(args, 0, "Kapsam yok", "")
+
+    monkeypatch.setattr(runner.subprocess, "run", fake_run)
+    args = ["ask", "--answers", str(answers), "--cases", str(cases), "--only", "scope"]
+    assert runner.main(args) == 0
+    assert calls[0][1]["cwd"] is None
+    assert "--strict-mcp-config" not in calls[0][0]

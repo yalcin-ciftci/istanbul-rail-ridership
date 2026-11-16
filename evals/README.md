@@ -11,7 +11,7 @@ Run in order after ingest and dbt have finished:
 ```powershell
 uv run python tools/publish_analysis_db.py
 uv run python evals/run_eval.py golden
-uv run python evals/run_eval.py ask --answers evals/answers/current
+uv run python evals/run_eval.py ask --answers evals/answers/current --workdir <empty-dir-outside-any-project>
 uv run python evals/run_eval.py score --answers evals/answers/current
 ```
 
@@ -27,9 +27,13 @@ and `score.md` in the answer directory. Exit codes: 0 success, 1 operational err
 `ask` **spends Claude quota**. It runs `claude -p --agent ulasim` once per case,
 allows 300 seconds per answer, and records failures as `ERROR:` while continuing.
 Headless runs cannot answer permission prompts, so the command pre-allows only the
-agent's three MCP tools (`--allowedTools=...`). Run it from a directory where the
-`ulasim` agent and MCP server are configured, and avoid starting many `ask`
-processes at the same moment: sessions started together were observed to come up
+agent's three MCP tools (`--allowedTools=...`). Use `--workdir` with a directory
+outside any Claude Code project: the runner writes the example agent
+(`examples/claude-code/ulasim.md`) and MCP config there and runs each question
+with `--strict-mcp-config`, so project hooks, CLAUDE.md files, notes and other MCP
+servers cannot leak answers into the agent's context. Without `--workdir` the
+agent and MCP server must already be configured in the current directory. Avoid
+starting many `ask` processes at the same moment: sessions started together were observed to come up
 without the MCP tools, and the agent then printed tool calls as text.
 Use `--agent` or `--only id,id` to customize collection. All three subcommands
 accept `--cases`; relative paths resolve against the repository, independent of cwd.
