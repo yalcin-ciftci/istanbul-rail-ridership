@@ -326,7 +326,7 @@ TVT-TV2,Tavşantepe (Doğu),Tavşantepe,rule,
 UIM-UIM,Üsküdar Meydan,Üsküdar Meydan,rule,
 ULU-ULU,Ulubatlı,Ulubatlı,rule,
 UMR-UMR,Ümraniye,Ümraniye,rule,
-UNI-UNI,Universite,Universite,rule,
+UNI-UNI,Universite,Üniversite,checked,Morks: official T5 stop name Üniversite (Eyüpsultan); source spelling kept in station_name
 UNL-UNL,Ünalan,Ünalan,rule,
 USE-MR1,Üsküdar-1,Üsküdar,rule,
 USE-MR2,Üsküdar-2,Üsküdar,rule,
