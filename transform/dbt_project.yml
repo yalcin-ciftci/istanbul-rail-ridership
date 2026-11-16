@@ -13,6 +13,10 @@ models:
     intermediate:
       +materialized: view
       +schema: intermediate
+    hourly:
+      +schema: hourly
+      +materialized: table
+      +persist_docs: {relation: true, columns: true}
     marts:
       +materialized: table
       +schema: marts
@@ -27,4 +31,19 @@ seeds:
         station_name: varchar
         station_group: varchar
         status: varchar
+        note: varchar
+    hourly_line_map:
+      +schema: hourly
+      +column_types:
+        line_code: varchar
+        daily_line_name: varchar
+        note: varchar
+    hourly_station_map:
+      +schema: hourly
+      +column_types:
+        line_code: varchar
+        station_key: varchar
+        station_name_raw: varchar
+        station_group: varchar
+        match_method: varchar
         note: varchar
