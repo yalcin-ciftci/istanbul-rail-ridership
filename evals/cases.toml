@@ -1,0 +1,179 @@
+[[case]]
+id = "busiest_stations_2025"
+question_tr = "2025'te en kalabalık 10 istasyon hangileri?"
+reference_sql = """
+SELECT station_group, sum(journey_count_estimated) AS journeys
+FROM marts.fct_station_group_daily
+WHERE ride_date >= DATE '2025-01-01' AND ride_date < DATE '2026-01-01'
+GROUP BY station_group
+ORDER BY journeys DESC, station_group
+LIMIT 10
+"""
+numbers = ["journeys"]
+number_rows = 3
+must_mention = ["(?i)turnike|geçiş"]
+must_not_mention = []
+rules = ["default_metric", "station_group"]
+refusal = false
+
+[[case]]
+id = "m4_weekday_weekend_2025"
+question_tr = "M4 hattının 2025 hafta içi ve hafta sonu günlük ortalama yolculukları kaç? Tam sayıya yuvarla ve hafta sonu tanımını belirt."
+reference_sql = """
+WITH daily AS (
+    SELECT f.ride_date, sum(f.journey_count_estimated) AS journeys
+    FROM marts.fct_line_daily AS f
+    JOIN marts.dim_line AS d ON f.line_name = d.line_name
+    WHERE d.line_code = 'M4'
+      AND f.ride_date >= DATE '2025-01-01' AND f.ride_date < DATE '2026-01-01'
+    GROUP BY f.ride_date
+)
+SELECT CASE WHEN isodow(ride_date) IN (6, 7) THEN 'weekend' ELSE 'weekday' END AS day_type,
+       round(avg(journeys)) AS journeys
+FROM daily
+GROUP BY day_type
+ORDER BY day_type
+"""
+numbers = ["journeys"]
+must_mention = ["(?i)cumartesi", "(?i)pazar"]
+must_not_mention = []
+rules = ["default_metric", "weekend"]
+refusal = false
+
+[[case]]
+id = "yenikapi_monthly_2025"
+question_tr = "Yenikapı istasyon grubunun 2025 aylık yolculuk toplamlarını ver; en düşük ve en yüksek ayları belirt."
+reference_sql = """
+WITH monthly AS (
+    SELECT date_trunc('month', ride_date)::DATE AS month,
+           sum(journey_count_estimated) AS journeys
+    FROM marts.fct_station_group_daily
+    WHERE station_group = 'Yenikapı'
+      AND ride_date >= DATE '2025-01-01' AND ride_date < DATE '2026-01-01'
+    GROUP BY month
+), ranked AS (
+    SELECT month, journeys,
+           row_number() OVER (ORDER BY journeys, month) AS low_rank,
+           row_number() OVER (ORDER BY journeys DESC, month DESC) AS high_rank
+    FROM monthly
+)
+SELECT month, journeys FROM ranked
+WHERE low_rank = 1 OR high_rank = 1
+ORDER BY journeys, month
+"""
+numbers = ["journeys"]
+must_mention = ["(?i)turnike|geçiş"]
+must_not_mention = []
+rules = ["default_metric", "station_group"]
+refusal = false
+
+[[case]]
+id = "kucukcekmece_district_2025"
+question_tr = "Kaynak ilçe alanında Küçükçekmece olarak geçen istasyon gruplarının 2025 toplam yolculuğu kaç? İlçe bilgisinin güvenilirliğini açıkla."
+reference_sql = """
+SELECT sum(f.journey_count_estimated) AS journeys
+FROM marts.fct_station_group_daily AS f
+WHERE f.ride_date >= DATE '2025-01-01' AND f.ride_date < DATE '2026-01-01'
+  AND EXISTS (
+      SELECT 1 FROM marts.dim_station AS d
+      WHERE d.station_group = f.station_group AND upper(d.district) = 'KÜÇÜKÇEKMECE'
+  )
+"""
+numbers = ["journeys"]
+must_mention = ["(?i)güvenilir|doğrula"]
+must_not_mention = []
+rules = ["default_metric", "district", "station_group"]
+refusal = false
+
+[[case]]
+id = "out_of_scope_yesterday"
+question_tr = "Dün kaç kişi bindi?"
+reference_sql = """
+SELECT min(ride_date) AS min_date, max(ride_date) AS max_date
+FROM marts.fct_station_daily
+"""
+numbers = []
+must_mention = []
+must_not_mention = []
+rules = []
+refusal = true
+
+[[case]]
+id = "suspect_2022_m2"
+question_tr = "M2 hattının 2022 yıllık toplam yolculuğu kaç? Tahminle ilgili uyarıyı açıkla."
+reference_sql = """
+SELECT sum(f.journey_count_estimated) AS journeys,
+       bool_or(f.has_suspect_journeys) AS has_suspect_journeys
+FROM marts.fct_line_daily AS f
+JOIN marts.dim_line AS d ON f.line_name = d.line_name
+WHERE d.line_code = 'M2'
+  AND f.ride_date >= DATE '2022-01-01' AND f.ride_date < DATE '2023-01-01'
+"""
+numbers = ["journeys"]
+must_mention = ["(?i)tahmin"]
+must_not_mention = []
+rules = ["suspect_warning"]
+refusal = false
+
+[[case]]
+id = "transition_days_2022"
+question_tr = "2022-10-31 ve 2022-11-01 günlerinin her birinde toplam yolculuk kaç? Geçiş günleriyle ilgili dikkat notunu ekle."
+reference_sql = """
+SELECT ride_date, sum(journey_count_estimated) AS journeys
+FROM marts.fct_line_daily
+WHERE ride_date IN (DATE '2022-10-31', DATE '2022-11-01')
+GROUP BY ride_date
+ORDER BY ride_date
+"""
+numbers = ["journeys"]
+must_mention = ["(?i)geçiş"]
+must_not_mention = []
+rules = ["transition_days"]
+refusal = false
+
+[[case]]
+id = "passenger_not_people"
+question_tr = "2023'te M2 hattını kaç farklı kişi kullandı?"
+reference_sql = """
+SELECT sum(f.journey_count_estimated) AS journeys
+FROM marts.fct_line_daily AS f
+JOIN marts.dim_line AS d ON f.line_name = d.line_name
+WHERE d.line_code = 'M2'
+  AND f.ride_date >= DATE '2023-01-01' AND f.ride_date < DATE '2024-01-01'
+"""
+numbers = []
+must_mention = ["(?i)tekil|aynı kişi"]
+must_not_mention = []
+rules = ["passenger_not_people"]
+refusal = false
+
+# M1 documents T3-KADIKOY-MODA as a line with stationless source rows.
+[[case]]
+id = "line_level_rows"
+question_tr = "T3-KADIKOY-MODA hattının 2025 toplam yolculuğu kaç? İstasyonu olmayan hat düzeyi satırlarını da dahil et."
+reference_sql = """
+SELECT sum(journey_count_estimated) AS journeys,
+       bool_or(has_line_level_rows) AS has_line_level_rows
+FROM marts.fct_line_daily
+WHERE line_name = 'T3-KADIKOY-MODA'
+  AND ride_date >= DATE '2025-01-01' AND ride_date < DATE '2026-01-01'
+"""
+numbers = ["journeys"]
+must_mention = []
+must_not_mention = []
+rules = ["line_level"]
+refusal = false
+
+[[case]]
+id = "data_version_cited"
+question_tr = "2024 toplam raylı sistem yolculuğu kaç? Kullandığın veri sürümünü de yaz."
+reference_sql = """
+SELECT sum(journey_count_estimated) AS journeys
+FROM marts.fct_line_daily
+WHERE ride_date >= DATE '2024-01-01' AND ride_date < DATE '2025-01-01'
+"""
+numbers = ["journeys"]
+must_mention = []
+must_not_mention = []
+rules = ["data_version"]
+refusal = false

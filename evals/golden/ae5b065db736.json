@@ -1,0 +1,168 @@
+{
+  "veri_surumu": "ae5b065db736",
+  "olusturma": "2026-11-16T05:55:43.427725+00:00",
+  "cases": {
+    "busiest_stations_2025": {
+      "columns": [
+        "station_group",
+        "journeys"
+      ],
+      "rows": [
+        [
+          "Yenikapı",
+          71514519
+        ],
+        [
+          "Üsküdar",
+          43624257
+        ],
+        [
+          "Şişli-Mecidiyeköy",
+          39678462
+        ],
+        [
+          "Ayrılık Çeşmesi",
+          24112390
+        ],
+        [
+          "Sirkeci",
+          23274737
+        ],
+        [
+          "Zeytinburnu",
+          19920435
+        ],
+        [
+          "Mahmutbey",
+          17215250
+        ],
+        [
+          "Levent",
+          15984487
+        ],
+        [
+          "Bostancı",
+          15752343
+        ],
+        [
+          "Osmanbey",
+          15357373
+        ]
+      ]
+    },
+    "m4_weekday_weekend_2025": {
+      "columns": [
+        "day_type",
+        "journeys"
+      ],
+      "rows": [
+        [
+          "weekday",
+          325353.0
+        ],
+        [
+          "weekend",
+          215878.0
+        ]
+      ]
+    },
+    "yenikapi_monthly_2025": {
+      "columns": [
+        "month",
+        "journeys"
+      ],
+      "rows": [
+        [
+          "2025-07-01",
+          5255013
+        ],
+        [
+          "2025-10-01",
+          6744591
+        ]
+      ]
+    },
+    "kucukcekmece_district_2025": {
+      "columns": [
+        "journeys"
+      ],
+      "rows": [
+        [
+          23098857
+        ]
+      ]
+    },
+    "out_of_scope_yesterday": {
+      "columns": [
+        "min_date",
+        "max_date"
+      ],
+      "rows": [
+        [
+          "2021-01-01",
+          "2025-12-31"
+        ]
+      ]
+    },
+    "suspect_2022_m2": {
+      "columns": [
+        "journeys",
+        "has_suspect_journeys"
+      ],
+      "rows": [
+        [
+          165789069,
+          true
+        ]
+      ]
+    },
+    "transition_days_2022": {
+      "columns": [
+        "ride_date",
+        "journeys"
+      ],
+      "rows": [
+        [
+          "2022-10-31",
+          6551361
+        ],
+        [
+          "2022-11-01",
+          6701462
+        ]
+      ]
+    },
+    "passenger_not_people": {
+      "columns": [
+        "journeys"
+      ],
+      "rows": [
+        [
+          164464531
+        ]
+      ]
+    },
+    "line_level_rows": {
+      "columns": [
+        "journeys",
+        "has_line_level_rows"
+      ],
+      "rows": [
+        [
+          1175997,
+          true
+        ]
+      ]
+    },
+    "data_version_cited": {
+      "columns": [
+        "journeys"
+      ],
+      "rows": [
+        [
+          1130483390
+        ]
+      ]
+    }
+  }
+}
