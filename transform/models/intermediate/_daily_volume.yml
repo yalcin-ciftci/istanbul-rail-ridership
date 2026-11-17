@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: int_daily_volume_anomaly
+    description: >
+      Daily quality table at (ride_date, scope, line_name), sourced from
+      fct_line_daily including line-level records. System rows sum all lines
+      and use line_name '*'. Flags only expose volume changes; counts are unchanged.
+      No holiday calendar: holiday drops can be expected false positives.
+    columns:
+      - name: ride_date
+        description: Observed journey date; missing system dates are checked separately.
+        data_tests:
+          - not_null
+      - name: scope
+        description: "line for each line/day; system for the sum of all lines/day."
+        data_tests:
+          - not_null
+      - name: line_name
+        description: "Source line name, or '*' for system totals."
+        data_tests:
+          - not_null
+      - name: journey_count
+        description: Unchanged source count from fct_line_daily, summed for system rows.
+      - name: journey_count_estimated
+        description: Existing project estimate from fct_line_daily; not an official IBB figure.
+      - name: has_suspect_journeys
+        description: True if any contributing line has suspect journeys.
+      - name: baseline_journeys
+        description: >
+          Median estimated count for this scope/line and weekday in the preceding
+          8 calendar weeks (7 through 56 days earlier, inclusive). NULL with fewer
+          than 4 non-NULL observations. Current day is excluded.
+      - name: baseline_weeks
+        description: Number of non-NULL estimated observations used, from 0 to 8.
+      - name: ratio_to_baseline
+        description: "Source count / baseline; NULL if baseline is NULL or zero."
+      - name: ratio_estimated_to_baseline
+        description: "Estimated count / baseline; NULL if baseline is NULL or zero."
+      - name: anomaly
+        description: >
+          no_baseline when baseline is NULL; then new_line for lines in the first
+          180 days from their minimum input ride_date; then low_volume for lines
+          with baseline below 5000; otherwise spike at estimated ratio >= 1.6, drop at <= 0.35,
+          or none. Corrected suspect source doubling need not be a spike.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['no_baseline', 'new_line', 'low_volume', 'spike', 'drop', 'none']

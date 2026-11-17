@@ -1,0 +1,1840 @@
+version: 2
+unit_tests:
+- name: test_volume_same_weekday_previous_eight_calendar_weeks
+  model: int_daily_volume_anomaly
+  given:
+  - input: ref('fct_line_daily')
+    rows:
+    - ride_date: '2023-01-02'
+      line_name: M1
+      journey_count: 900000
+      journey_count_estimated: 900000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-01'
+      line_name: M1
+      journey_count: 900000
+      journey_count_estimated: 900000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-08'
+      line_name: M1
+      journey_count: 1000
+      journey_count_estimated: 1000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-15'
+      line_name: M1
+      journey_count: 2000
+      journey_count_estimated: 2000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-22'
+      line_name: M1
+      journey_count: 3000
+      journey_count_estimated: 3000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-29'
+      line_name: M1
+      journey_count: 8000
+      journey_count_estimated: 4000
+      has_suspect_journeys: true
+    - ride_date: '2024-02-05'
+      line_name: M1
+      journey_count: 5000
+      journey_count_estimated: 5000
+      has_suspect_journeys: false
+    - ride_date: '2024-02-12'
+      line_name: M1
+      journey_count: 6000
+      journey_count_estimated: 6000
+      has_suspect_journeys: false
+    - ride_date: '2024-02-19'
+      line_name: M1
+      journey_count: 7000
+      journey_count_estimated: 7000
+      has_suspect_journeys: false
+    - ride_date: '2024-02-26'
+      line_name: M1
+      journey_count: 8000
+      journey_count_estimated: 8000
+      has_suspect_journeys: false
+    - ride_date: '2024-03-04'
+      line_name: M1
+      journey_count: 9000
+      journey_count_estimated: 9000
+      has_suspect_journeys: false
+    - ride_date: '2024-02-27'
+      line_name: M1
+      journey_count: 999999
+      journey_count_estimated: 999999
+      has_suspect_journeys: false
+  expect:
+    rows:
+    - ride_date: '2024-01-01'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+    - ride_date: '2024-01-01'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+    - ride_date: '2024-01-08'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 1
+      anomaly: no_baseline
+    - ride_date: '2024-01-08'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 1
+      anomaly: no_baseline
+    - ride_date: '2024-01-15'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 2
+      anomaly: no_baseline
+    - ride_date: '2024-01-15'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 2
+      anomaly: no_baseline
+    - ride_date: '2024-01-22'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 3
+      anomaly: no_baseline
+    - ride_date: '2024-01-22'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 3
+      anomaly: no_baseline
+    - ride_date: '2024-01-29'
+      scope: line
+      line_name: M1
+      baseline_journeys: 2500
+      baseline_weeks: 4
+      anomaly: low_volume
+    - ride_date: '2024-01-29'
+      scope: system
+      line_name: '*'
+      baseline_journeys: 2500
+      baseline_weeks: 4
+      anomaly: spike
+    - ride_date: '2024-02-05'
+      scope: line
+      line_name: M1
+      baseline_journeys: 3000
+      baseline_weeks: 5
+      anomaly: low_volume
+    - ride_date: '2024-02-05'
+      scope: system
+      line_name: '*'
+      baseline_journeys: 3000
+      baseline_weeks: 5
+      anomaly: spike
+    - ride_date: '2024-02-12'
+      scope: line
+      line_name: M1
+      baseline_journeys: 3500
+      baseline_weeks: 6
+      anomaly: low_volume
+    - ride_date: '2024-02-12'
+      scope: system
+      line_name: '*'
+      baseline_journeys: 3500
+      baseline_weeks: 6
+      anomaly: spike
+    - ride_date: '2024-02-19'
+      scope: line
+      line_name: M1
+      baseline_journeys: 4000
+      baseline_weeks: 7
+      anomaly: low_volume
+    - ride_date: '2024-02-19'
+      scope: system
+      line_name: '*'
+      baseline_journeys: 4000
+      baseline_weeks: 7
+      anomaly: spike
+    - ride_date: '2024-02-26'
+      scope: line
+      line_name: M1
+      baseline_journeys: 4500
+      baseline_weeks: 8
+      anomaly: low_volume
+    - ride_date: '2024-02-26'
+      scope: system
+      line_name: '*'
+      baseline_journeys: 4500
+      baseline_weeks: 8
+      anomaly: spike
+    - ride_date: '2024-03-04'
+      scope: line
+      line_name: M1
+      baseline_journeys: 4500
+      baseline_weeks: 8
+      anomaly: low_volume
+    - ride_date: '2024-03-04'
+      scope: system
+      line_name: '*'
+      baseline_journeys: 4500
+      baseline_weeks: 8
+      anomaly: spike
+    - ride_date: '2024-02-27'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+    - ride_date: '2024-02-27'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+    - ride_date: '2023-01-02'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+    - ride_date: '2023-01-02'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+- name: test_volume_fewer_than_four_observations_and_expired_history
+  model: int_daily_volume_anomaly
+  given:
+  - input: ref('fct_line_daily')
+    rows:
+    - ride_date: '2023-01-02'
+      line_name: M1
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-01'
+      line_name: M1
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-08'
+      line_name: M1
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-15'
+      line_name: M1
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-22'
+      line_name: M1
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-06-03'
+      line_name: M1
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+  expect:
+    rows:
+    - ride_date: '2024-01-01'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+    - ride_date: '2024-01-01'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+    - ride_date: '2024-01-08'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 1
+      anomaly: no_baseline
+    - ride_date: '2024-01-08'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 1
+      anomaly: no_baseline
+    - ride_date: '2024-01-15'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 2
+      anomaly: no_baseline
+    - ride_date: '2024-01-15'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 2
+      anomaly: no_baseline
+    - ride_date: '2024-01-22'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 3
+      anomaly: no_baseline
+    - ride_date: '2024-01-22'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 3
+      anomaly: no_baseline
+    - ride_date: '2024-06-03'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+    - ride_date: '2024-06-03'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+    - ride_date: '2023-01-02'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+    - ride_date: '2023-01-02'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+- name: test_volume_inclusive_thresholds_and_just_inside
+  model: int_daily_volume_anomaly
+  given:
+  - input: ref('fct_line_daily')
+    rows:
+    - ride_date: '2023-01-02'
+      line_name: SPIKE
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2023-01-02'
+      line_name: DROP
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2023-01-02'
+      line_name: INSIDE_HIGH
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2023-01-02'
+      line_name: INSIDE_LOW
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-01'
+      line_name: SPIKE
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-01'
+      line_name: DROP
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-01'
+      line_name: INSIDE_HIGH
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-01'
+      line_name: INSIDE_LOW
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-08'
+      line_name: SPIKE
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-08'
+      line_name: DROP
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-08'
+      line_name: INSIDE_HIGH
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-08'
+      line_name: INSIDE_LOW
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-15'
+      line_name: SPIKE
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-15'
+      line_name: DROP
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-15'
+      line_name: INSIDE_HIGH
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-15'
+      line_name: INSIDE_LOW
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-22'
+      line_name: SPIKE
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-22'
+      line_name: DROP
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-22'
+      line_name: INSIDE_HIGH
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-22'
+      line_name: INSIDE_LOW
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-29'
+      line_name: SPIKE
+      journey_count: 16000
+      journey_count_estimated: 16000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-29'
+      line_name: DROP
+      journey_count: 3500
+      journey_count_estimated: 3500
+      has_suspect_journeys: false
+    - ride_date: '2024-01-29'
+      line_name: INSIDE_HIGH
+      journey_count: 15999
+      journey_count_estimated: 15999
+      has_suspect_journeys: false
+    - ride_date: '2024-01-29'
+      line_name: INSIDE_LOW
+      journey_count: 3501
+      journey_count_estimated: 3501
+      has_suspect_journeys: false
+  expect:
+    rows:
+    - ride_date: '2024-01-01'
+      scope: line
+      line_name: SPIKE
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-01'
+      scope: line
+      line_name: DROP
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-01'
+      scope: line
+      line_name: INSIDE_HIGH
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-01'
+      scope: line
+      line_name: INSIDE_LOW
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-01'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 40000
+      journey_count_estimated: 40000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-08'
+      scope: line
+      line_name: SPIKE
+      baseline_journeys: null
+      baseline_weeks: 1
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-08'
+      scope: line
+      line_name: DROP
+      baseline_journeys: null
+      baseline_weeks: 1
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-08'
+      scope: line
+      line_name: INSIDE_HIGH
+      baseline_journeys: null
+      baseline_weeks: 1
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-08'
+      scope: line
+      line_name: INSIDE_LOW
+      baseline_journeys: null
+      baseline_weeks: 1
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-08'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 1
+      anomaly: no_baseline
+      journey_count: 40000
+      journey_count_estimated: 40000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-15'
+      scope: line
+      line_name: SPIKE
+      baseline_journeys: null
+      baseline_weeks: 2
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-15'
+      scope: line
+      line_name: DROP
+      baseline_journeys: null
+      baseline_weeks: 2
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-15'
+      scope: line
+      line_name: INSIDE_HIGH
+      baseline_journeys: null
+      baseline_weeks: 2
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-15'
+      scope: line
+      line_name: INSIDE_LOW
+      baseline_journeys: null
+      baseline_weeks: 2
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-15'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 2
+      anomaly: no_baseline
+      journey_count: 40000
+      journey_count_estimated: 40000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-22'
+      scope: line
+      line_name: SPIKE
+      baseline_journeys: null
+      baseline_weeks: 3
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-22'
+      scope: line
+      line_name: DROP
+      baseline_journeys: null
+      baseline_weeks: 3
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-22'
+      scope: line
+      line_name: INSIDE_HIGH
+      baseline_journeys: null
+      baseline_weeks: 3
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-22'
+      scope: line
+      line_name: INSIDE_LOW
+      baseline_journeys: null
+      baseline_weeks: 3
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-22'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 3
+      anomaly: no_baseline
+      journey_count: 40000
+      journey_count_estimated: 40000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-29'
+      scope: line
+      line_name: SPIKE
+      baseline_journeys: 10000
+      baseline_weeks: 4
+      anomaly: spike
+      journey_count: 16000
+      journey_count_estimated: 16000
+      has_suspect_journeys: false
+      ratio_to_baseline: 1.6
+      ratio_estimated_to_baseline: 1.6
+    - ride_date: '2024-01-29'
+      scope: line
+      line_name: DROP
+      baseline_journeys: 10000
+      baseline_weeks: 4
+      anomaly: drop
+      journey_count: 3500
+      journey_count_estimated: 3500
+      has_suspect_journeys: false
+      ratio_to_baseline: 0.35
+      ratio_estimated_to_baseline: 0.35
+    - ride_date: '2024-01-29'
+      scope: line
+      line_name: INSIDE_HIGH
+      baseline_journeys: 10000
+      baseline_weeks: 4
+      anomaly: none
+      journey_count: 15999
+      journey_count_estimated: 15999
+      has_suspect_journeys: false
+      ratio_to_baseline: 1.5999
+      ratio_estimated_to_baseline: 1.5999
+    - ride_date: '2024-01-29'
+      scope: line
+      line_name: INSIDE_LOW
+      baseline_journeys: 10000
+      baseline_weeks: 4
+      anomaly: none
+      journey_count: 3501
+      journey_count_estimated: 3501
+      has_suspect_journeys: false
+      ratio_to_baseline: 0.3501
+      ratio_estimated_to_baseline: 0.3501
+    - ride_date: '2024-01-29'
+      scope: system
+      line_name: '*'
+      baseline_journeys: 40000
+      baseline_weeks: 4
+      anomaly: none
+      journey_count: 39000
+      journey_count_estimated: 39000
+      has_suspect_journeys: false
+      ratio_to_baseline: 0.975
+      ratio_estimated_to_baseline: 0.975
+    - ride_date: '2023-01-02'
+      scope: line
+      line_name: SPIKE
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2023-01-02'
+      scope: line
+      line_name: DROP
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2023-01-02'
+      scope: line
+      line_name: INSIDE_HIGH
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2023-01-02'
+      scope: line
+      line_name: INSIDE_LOW
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2023-01-02'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 40000
+      journey_count_estimated: 40000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+- name: test_volume_suspect_source_doubled_estimate_normal
+  model: int_daily_volume_anomaly
+  given:
+  - input: ref('fct_line_daily')
+    rows:
+    - ride_date: '2023-01-02'
+      line_name: M1
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-01'
+      line_name: M1
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-08'
+      line_name: M1
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-15'
+      line_name: M1
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-22'
+      line_name: M1
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-29'
+      line_name: M1
+      journey_count: 20000
+      journey_count_estimated: 10000
+      has_suspect_journeys: true
+  expect:
+    rows:
+    - ride_date: '2024-01-01'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-01'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-08'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 1
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-08'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 1
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-15'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 2
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-15'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 2
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-22'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 3
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-22'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 3
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-29'
+      scope: line
+      line_name: M1
+      baseline_journeys: 10000
+      baseline_weeks: 4
+      anomaly: none
+      journey_count: 20000
+      journey_count_estimated: 10000
+      has_suspect_journeys: true
+      ratio_to_baseline: 2.0
+      ratio_estimated_to_baseline: 1.0
+    - ride_date: '2024-01-29'
+      scope: system
+      line_name: '*'
+      baseline_journeys: 10000
+      baseline_weeks: 4
+      anomaly: none
+      journey_count: 20000
+      journey_count_estimated: 10000
+      has_suspect_journeys: true
+      ratio_to_baseline: 2.0
+      ratio_estimated_to_baseline: 1.0
+    - ride_date: '2023-01-02'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2023-01-02'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+- name: test_volume_small_lines_and_system_not_suppressed
+  model: int_daily_volume_anomaly
+  given:
+  - input: ref('fct_line_daily')
+    rows:
+    - ride_date: '2023-01-02'
+      line_name: SMALL
+      journey_count: 999
+      journey_count_estimated: 999
+      has_suspect_journeys: false
+    - ride_date: '2023-01-02'
+      line_name: EDGE
+      journey_count: 1000
+      journey_count_estimated: 1000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-01'
+      line_name: SMALL
+      journey_count: 999
+      journey_count_estimated: 999
+      has_suspect_journeys: false
+    - ride_date: '2024-01-01'
+      line_name: EDGE
+      journey_count: 1000
+      journey_count_estimated: 1000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-08'
+      line_name: SMALL
+      journey_count: 999
+      journey_count_estimated: 999
+      has_suspect_journeys: false
+    - ride_date: '2024-01-08'
+      line_name: EDGE
+      journey_count: 1000
+      journey_count_estimated: 1000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-15'
+      line_name: SMALL
+      journey_count: 999
+      journey_count_estimated: 999
+      has_suspect_journeys: false
+    - ride_date: '2024-01-15'
+      line_name: EDGE
+      journey_count: 1000
+      journey_count_estimated: 1000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-22'
+      line_name: SMALL
+      journey_count: 999
+      journey_count_estimated: 999
+      has_suspect_journeys: false
+    - ride_date: '2024-01-22'
+      line_name: EDGE
+      journey_count: 1000
+      journey_count_estimated: 1000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-29'
+      line_name: SMALL
+      journey_count: 1998
+      journey_count_estimated: 1998
+      has_suspect_journeys: false
+    - ride_date: '2024-01-29'
+      line_name: EDGE
+      journey_count: 1600
+      journey_count_estimated: 1600
+      has_suspect_journeys: false
+  expect:
+    rows:
+    - ride_date: '2024-01-01'
+      scope: line
+      line_name: SMALL
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+    - ride_date: '2024-01-01'
+      scope: line
+      line_name: EDGE
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+    - ride_date: '2024-01-01'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+    - ride_date: '2024-01-08'
+      scope: line
+      line_name: SMALL
+      baseline_journeys: null
+      baseline_weeks: 1
+      anomaly: no_baseline
+    - ride_date: '2024-01-08'
+      scope: line
+      line_name: EDGE
+      baseline_journeys: null
+      baseline_weeks: 1
+      anomaly: no_baseline
+    - ride_date: '2024-01-08'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 1
+      anomaly: no_baseline
+    - ride_date: '2024-01-15'
+      scope: line
+      line_name: SMALL
+      baseline_journeys: null
+      baseline_weeks: 2
+      anomaly: no_baseline
+    - ride_date: '2024-01-15'
+      scope: line
+      line_name: EDGE
+      baseline_journeys: null
+      baseline_weeks: 2
+      anomaly: no_baseline
+    - ride_date: '2024-01-15'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 2
+      anomaly: no_baseline
+    - ride_date: '2024-01-22'
+      scope: line
+      line_name: SMALL
+      baseline_journeys: null
+      baseline_weeks: 3
+      anomaly: no_baseline
+    - ride_date: '2024-01-22'
+      scope: line
+      line_name: EDGE
+      baseline_journeys: null
+      baseline_weeks: 3
+      anomaly: no_baseline
+    - ride_date: '2024-01-22'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 3
+      anomaly: no_baseline
+    - ride_date: '2024-01-29'
+      scope: line
+      line_name: SMALL
+      baseline_journeys: 999
+      baseline_weeks: 4
+      anomaly: low_volume
+    - ride_date: '2024-01-29'
+      scope: line
+      line_name: EDGE
+      baseline_journeys: 1000
+      baseline_weeks: 4
+      anomaly: low_volume
+    - ride_date: '2024-01-29'
+      scope: system
+      line_name: '*'
+      baseline_journeys: 1999
+      baseline_weeks: 4
+      anomaly: spike
+    - ride_date: '2023-01-02'
+      scope: line
+      line_name: SMALL
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+    - ride_date: '2023-01-02'
+      scope: line
+      line_name: EDGE
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+    - ride_date: '2023-01-02'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+- name: test_volume_system_sums_all_lines_and_propagates_suspect
+  model: int_daily_volume_anomaly
+  given:
+  - input: ref('fct_line_daily')
+    rows:
+    - ride_date: '2023-01-02'
+      line_name: M1
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2023-01-02'
+      line_name: M2
+      journey_count: 20000
+      journey_count_estimated: 20000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-01'
+      line_name: M1
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-01'
+      line_name: M2
+      journey_count: 20000
+      journey_count_estimated: 20000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-08'
+      line_name: M1
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-08'
+      line_name: M2
+      journey_count: 20000
+      journey_count_estimated: 20000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-15'
+      line_name: M1
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-15'
+      line_name: M2
+      journey_count: 20000
+      journey_count_estimated: 20000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-22'
+      line_name: M1
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-22'
+      line_name: M2
+      journey_count: 20000
+      journey_count_estimated: 20000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-29'
+      line_name: M1
+      journey_count: 20000
+      journey_count_estimated: 10000
+      has_suspect_journeys: true
+    - ride_date: '2024-01-29'
+      line_name: M2
+      journey_count: 20000
+      journey_count_estimated: 20000
+      has_suspect_journeys: false
+  expect:
+    rows:
+    - ride_date: '2024-01-01'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-01'
+      scope: line
+      line_name: M2
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 20000
+      journey_count_estimated: 20000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-01'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 30000
+      journey_count_estimated: 30000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-08'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 1
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-08'
+      scope: line
+      line_name: M2
+      baseline_journeys: null
+      baseline_weeks: 1
+      anomaly: no_baseline
+      journey_count: 20000
+      journey_count_estimated: 20000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-08'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 1
+      anomaly: no_baseline
+      journey_count: 30000
+      journey_count_estimated: 30000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-15'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 2
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-15'
+      scope: line
+      line_name: M2
+      baseline_journeys: null
+      baseline_weeks: 2
+      anomaly: no_baseline
+      journey_count: 20000
+      journey_count_estimated: 20000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-15'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 2
+      anomaly: no_baseline
+      journey_count: 30000
+      journey_count_estimated: 30000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-22'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 3
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-22'
+      scope: line
+      line_name: M2
+      baseline_journeys: null
+      baseline_weeks: 3
+      anomaly: no_baseline
+      journey_count: 20000
+      journey_count_estimated: 20000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-22'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 3
+      anomaly: no_baseline
+      journey_count: 30000
+      journey_count_estimated: 30000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2024-01-29'
+      scope: line
+      line_name: M1
+      baseline_journeys: 10000
+      baseline_weeks: 4
+      anomaly: none
+      journey_count: 20000
+      journey_count_estimated: 10000
+      has_suspect_journeys: true
+      ratio_to_baseline: 2.0
+      ratio_estimated_to_baseline: 1.0
+    - ride_date: '2024-01-29'
+      scope: line
+      line_name: M2
+      baseline_journeys: 20000
+      baseline_weeks: 4
+      anomaly: none
+      journey_count: 20000
+      journey_count_estimated: 20000
+      has_suspect_journeys: false
+      ratio_to_baseline: 1.0
+      ratio_estimated_to_baseline: 1.0
+    - ride_date: '2024-01-29'
+      scope: system
+      line_name: '*'
+      baseline_journeys: 30000
+      baseline_weeks: 4
+      anomaly: none
+      journey_count: 40000
+      journey_count_estimated: 30000
+      has_suspect_journeys: true
+      ratio_to_baseline: 1.3333333333333333
+      ratio_estimated_to_baseline: 1.0
+    - ride_date: '2023-01-02'
+      scope: line
+      line_name: M1
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2023-01-02'
+      scope: line
+      line_name: M2
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 20000
+      journey_count_estimated: 20000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+    - ride_date: '2023-01-02'
+      scope: system
+      line_name: '*'
+      baseline_journeys: null
+      baseline_weeks: 0
+      anomaly: no_baseline
+      journey_count: 30000
+      journey_count_estimated: 30000
+      has_suspect_journeys: false
+      ratio_to_baseline: null
+      ratio_estimated_to_baseline: null
+- name: test_volume_new_line_179_days
+  model: int_daily_volume_anomaly
+  given:
+  - input: ref('fct_line_daily')
+    rows:
+    - ride_date: '2024-01-01'
+      line_name: NEW
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-05-31'
+      line_name: NEW
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-06-07'
+      line_name: NEW
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-06-14'
+      line_name: NEW
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-06-21'
+      line_name: NEW
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-06-28'
+      line_name: NEW
+      journey_count: 20000
+      journey_count_estimated: 20000
+      has_suspect_journeys: false
+  expect:
+    rows:
+    - ride_date: '2024-01-01'
+      scope: line
+      line_name: NEW
+      anomaly: no_baseline
+    - ride_date: '2024-05-31'
+      scope: line
+      line_name: NEW
+      anomaly: no_baseline
+    - ride_date: '2024-06-07'
+      scope: line
+      line_name: NEW
+      anomaly: no_baseline
+    - ride_date: '2024-06-14'
+      scope: line
+      line_name: NEW
+      anomaly: no_baseline
+    - ride_date: '2024-06-21'
+      scope: line
+      line_name: NEW
+      anomaly: no_baseline
+    - ride_date: '2024-06-28'
+      scope: line
+      line_name: NEW
+      anomaly: new_line
+    - ride_date: '2024-01-01'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-05-31'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-06-07'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-06-14'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-06-21'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-06-28'
+      scope: system
+      line_name: '*'
+      anomaly: spike
+- name: test_volume_new_line_180_days
+  model: int_daily_volume_anomaly
+  given:
+  - input: ref('fct_line_daily')
+    rows:
+    - ride_date: '2024-01-01'
+      line_name: NEW
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-06-01'
+      line_name: NEW
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-06-08'
+      line_name: NEW
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-06-15'
+      line_name: NEW
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-06-22'
+      line_name: NEW
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-06-29'
+      line_name: NEW
+      journey_count: 20000
+      journey_count_estimated: 20000
+      has_suspect_journeys: false
+  expect:
+    rows:
+    - ride_date: '2024-01-01'
+      scope: line
+      line_name: NEW
+      anomaly: no_baseline
+    - ride_date: '2024-06-01'
+      scope: line
+      line_name: NEW
+      anomaly: no_baseline
+    - ride_date: '2024-06-08'
+      scope: line
+      line_name: NEW
+      anomaly: no_baseline
+    - ride_date: '2024-06-15'
+      scope: line
+      line_name: NEW
+      anomaly: no_baseline
+    - ride_date: '2024-06-22'
+      scope: line
+      line_name: NEW
+      anomaly: no_baseline
+    - ride_date: '2024-06-29'
+      scope: line
+      line_name: NEW
+      anomaly: spike
+    - ride_date: '2024-01-01'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-06-01'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-06-08'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-06-15'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-06-22'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-06-29'
+      scope: system
+      line_name: '*'
+      anomaly: spike
+- name: test_volume_low_volume_4999_and_5000
+  model: int_daily_volume_anomaly
+  given:
+  - input: ref('fct_line_daily')
+    rows:
+    - ride_date: '2024-01-01'
+      line_name: SMALL
+      journey_count: 4999
+      journey_count_estimated: 4999
+      has_suspect_journeys: false
+    - ride_date: '2024-06-03'
+      line_name: SMALL
+      journey_count: 4999
+      journey_count_estimated: 4999
+      has_suspect_journeys: false
+    - ride_date: '2024-06-10'
+      line_name: SMALL
+      journey_count: 4999
+      journey_count_estimated: 4999
+      has_suspect_journeys: false
+    - ride_date: '2024-06-17'
+      line_name: SMALL
+      journey_count: 4999
+      journey_count_estimated: 4999
+      has_suspect_journeys: false
+    - ride_date: '2024-06-24'
+      line_name: SMALL
+      journey_count: 4999
+      journey_count_estimated: 4999
+      has_suspect_journeys: false
+    - ride_date: '2024-07-01'
+      line_name: SMALL
+      journey_count: 9998
+      journey_count_estimated: 9998
+      has_suspect_journeys: false
+    - ride_date: '2024-01-01'
+      line_name: EDGE
+      journey_count: 5000
+      journey_count_estimated: 5000
+      has_suspect_journeys: false
+    - ride_date: '2024-06-03'
+      line_name: EDGE
+      journey_count: 5000
+      journey_count_estimated: 5000
+      has_suspect_journeys: false
+    - ride_date: '2024-06-10'
+      line_name: EDGE
+      journey_count: 5000
+      journey_count_estimated: 5000
+      has_suspect_journeys: false
+    - ride_date: '2024-06-17'
+      line_name: EDGE
+      journey_count: 5000
+      journey_count_estimated: 5000
+      has_suspect_journeys: false
+    - ride_date: '2024-06-24'
+      line_name: EDGE
+      journey_count: 5000
+      journey_count_estimated: 5000
+      has_suspect_journeys: false
+    - ride_date: '2024-07-01'
+      line_name: EDGE
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+  expect:
+    rows:
+    - ride_date: '2024-01-01'
+      scope: line
+      line_name: SMALL
+      anomaly: no_baseline
+    - ride_date: '2024-06-03'
+      scope: line
+      line_name: SMALL
+      anomaly: no_baseline
+    - ride_date: '2024-06-10'
+      scope: line
+      line_name: SMALL
+      anomaly: no_baseline
+    - ride_date: '2024-06-17'
+      scope: line
+      line_name: SMALL
+      anomaly: no_baseline
+    - ride_date: '2024-06-24'
+      scope: line
+      line_name: SMALL
+      anomaly: no_baseline
+    - ride_date: '2024-07-01'
+      scope: line
+      line_name: SMALL
+      anomaly: low_volume
+    - ride_date: '2024-01-01'
+      scope: line
+      line_name: EDGE
+      anomaly: no_baseline
+    - ride_date: '2024-06-03'
+      scope: line
+      line_name: EDGE
+      anomaly: no_baseline
+    - ride_date: '2024-06-10'
+      scope: line
+      line_name: EDGE
+      anomaly: no_baseline
+    - ride_date: '2024-06-17'
+      scope: line
+      line_name: EDGE
+      anomaly: no_baseline
+    - ride_date: '2024-06-24'
+      scope: line
+      line_name: EDGE
+      anomaly: no_baseline
+    - ride_date: '2024-07-01'
+      scope: line
+      line_name: EDGE
+      anomaly: spike
+    - ride_date: '2024-01-01'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-06-03'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-06-10'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-06-17'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-06-24'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-07-01'
+      scope: system
+      line_name: '*'
+      anomaly: spike
+- name: test_volume_new_low_line_priority_and_partition
+  model: int_daily_volume_anomaly
+  given:
+  - input: ref('fct_line_daily')
+    rows:
+    - ride_date: '2023-01-01'
+      line_name: OLD
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-02-12'
+      line_name: OLD
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-02-19'
+      line_name: OLD
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-02-26'
+      line_name: OLD
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-03-04'
+      line_name: OLD
+      journey_count: 10000
+      journey_count_estimated: 10000
+      has_suspect_journeys: false
+    - ride_date: '2024-03-11'
+      line_name: OLD
+      journey_count: 20000
+      journey_count_estimated: 20000
+      has_suspect_journeys: false
+    - ride_date: '2024-01-01'
+      line_name: NEW
+      journey_count: 4000
+      journey_count_estimated: 4000
+      has_suspect_journeys: false
+    - ride_date: '2024-02-12'
+      line_name: NEW
+      journey_count: 4000
+      journey_count_estimated: 4000
+      has_suspect_journeys: false
+    - ride_date: '2024-02-19'
+      line_name: NEW
+      journey_count: 4000
+      journey_count_estimated: 4000
+      has_suspect_journeys: false
+    - ride_date: '2024-02-26'
+      line_name: NEW
+      journey_count: 4000
+      journey_count_estimated: 4000
+      has_suspect_journeys: false
+    - ride_date: '2024-03-04'
+      line_name: NEW
+      journey_count: 4000
+      journey_count_estimated: 4000
+      has_suspect_journeys: false
+    - ride_date: '2024-03-11'
+      line_name: NEW
+      journey_count: 8000
+      journey_count_estimated: 8000
+      has_suspect_journeys: false
+  expect:
+    rows:
+    - ride_date: '2023-01-01'
+      scope: line
+      line_name: OLD
+      anomaly: no_baseline
+    - ride_date: '2024-02-12'
+      scope: line
+      line_name: OLD
+      anomaly: no_baseline
+    - ride_date: '2024-02-19'
+      scope: line
+      line_name: OLD
+      anomaly: no_baseline
+    - ride_date: '2024-02-26'
+      scope: line
+      line_name: OLD
+      anomaly: no_baseline
+    - ride_date: '2024-03-04'
+      scope: line
+      line_name: OLD
+      anomaly: no_baseline
+    - ride_date: '2024-03-11'
+      scope: line
+      line_name: OLD
+      anomaly: spike
+    - ride_date: '2024-01-01'
+      scope: line
+      line_name: NEW
+      anomaly: no_baseline
+    - ride_date: '2024-02-12'
+      scope: line
+      line_name: NEW
+      anomaly: no_baseline
+    - ride_date: '2024-02-19'
+      scope: line
+      line_name: NEW
+      anomaly: no_baseline
+    - ride_date: '2024-02-26'
+      scope: line
+      line_name: NEW
+      anomaly: no_baseline
+    - ride_date: '2024-03-04'
+      scope: line
+      line_name: NEW
+      anomaly: no_baseline
+    - ride_date: '2024-03-11'
+      scope: line
+      line_name: NEW
+      anomaly: new_line
+    - ride_date: '2023-01-01'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-01-01'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-02-12'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-02-19'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-02-26'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-03-04'
+      scope: system
+      line_name: '*'
+      anomaly: no_baseline
+    - ride_date: '2024-03-11'
+      scope: system
+      line_name: '*'
+      anomaly: spike
