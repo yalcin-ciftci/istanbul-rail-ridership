@@ -8,9 +8,15 @@ with daily_quality as (
     group by ride_date
 )
 select
-    ride_date,
-    row_count,
-    even_share,
-    journey_passenger_ratio,
-    even_share >= 0.99 and journey_passenger_ratio >= 1.8 as journey_suspect
-from daily_quality
+    q.ride_date,
+    q.row_count,
+    q.even_share,
+    q.journey_passenger_ratio,
+    (q.even_share >= 0.99 and q.journey_passenger_ratio >= 1.8)
+        or o.ride_date is not null as journey_suspect,
+    case
+        when q.even_share >= 0.99 and q.journey_passenger_ratio >= 1.8 then 'rule'
+        when o.ride_date is not null then 'hourly_override'
+    end as journey_suspect_source
+from daily_quality as q
+left join {{ ref('journey_suspect_overrides') }} as o on q.ride_date = o.ride_date

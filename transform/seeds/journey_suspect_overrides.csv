@@ -1,0 +1,8 @@
+ride_date,reason,evidence
+2022-10-31,hourly_confirmed_doubling,"hourly/daily ratio 0.498; M5 stage 3 reconciliation, commit f0159bb"
+2022-11-01,hourly_confirmed_doubling,"hourly/daily ratio 0.498; M5 stage 3 reconciliation, commit f0159bb"
+2022-11-03,hourly_confirmed_doubling,"hourly/daily ratio 0.498; M5 stage 3 reconciliation, commit f0159bb"
+2022-11-04,hourly_confirmed_doubling,"hourly/daily ratio 0.498; M5 stage 3 reconciliation, commit f0159bb"
+2022-11-05,hourly_confirmed_doubling,"hourly/daily ratio 0.498; M5 stage 3 reconciliation, commit f0159bb"
+2022-11-06,hourly_confirmed_doubling,"hourly/daily ratio 0.496; M5 stage 3 reconciliation, commit f0159bb"
+2022-11-07,hourly_confirmed_doubling,"hourly/daily ratio 0.500; M5 stage 3 reconciliation, commit f0159bb"

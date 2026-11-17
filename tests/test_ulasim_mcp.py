@@ -552,7 +552,7 @@ def test_sema_only_marts_comments_scope_and_caveats(db):
         "passenger_count",
         "journey_count",
         "2022-03-28",
-        "2022-11-02",
+        "2022-11-07",
         "journey_count_estimated",
         "tahmin",
         "fct_line_daily",

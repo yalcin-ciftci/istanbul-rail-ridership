@@ -116,19 +116,19 @@ rules = ["suspect_warning"]
 refusal = false
 
 [[case]]
-id = "transition_days_2022"
-question_tr = "2022-10-31 ve 2022-11-01 günlerinin her birinde toplam yolculuk kaç? Geçiş günleriyle ilgili dikkat notunu ekle."
+id = "hourly_override_2022"
+question_tr = "2022-10-31 ile 2022-11-07 arasındaki her gün için tahmini toplam yolculuk kaç? Bu günlerle ilgili veri uyarısını açıkla."
 reference_sql = """
 SELECT ride_date, sum(journey_count_estimated) AS journeys
 FROM marts.fct_line_daily
-WHERE ride_date IN (DATE '2022-10-31', DATE '2022-11-01')
+WHERE ride_date BETWEEN DATE '2022-10-31' AND DATE '2022-11-07'
 GROUP BY ride_date
 ORDER BY ride_date
 """
 numbers = ["journeys"]
-must_mention = ["(?i)geçiş"]
+must_mention = ["(?i)tahmin", "(?i)iki kat|şüpheli|saatlik|İBB'nin değil|proje"]
 must_not_mention = []
-rules = ["transition_days"]
+rules = ["hourly_override", "suspect_warning"]
 refusal = false
 
 [[case]]

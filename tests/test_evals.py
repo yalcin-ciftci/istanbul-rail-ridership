@@ -33,6 +33,55 @@ def test_cases_and_rule_contract():
         runner.validate_sql(case["reference_sql"])
 
 
+def test_hourly_override_reference_and_estimate_warning():
+    runner = implementation("run_eval")
+    cases = runner.load_cases(ROOT / "evals/cases.toml")
+    case = cases[6]
+    assert case["id"] == "hourly_override_2022"
+    with duckdb.connect(":memory:") as con:
+        con.execute("CREATE SCHEMA marts")
+        con.execute(
+            "CREATE TABLE marts.fct_line_daily "
+            "(ride_date DATE, journey_count BIGINT, journey_count_estimated BIGINT, "
+            "has_suspect_journeys BOOLEAN)"
+        )
+        con.execute(
+            "INSERT INTO marts.fct_line_daily VALUES "
+            "('2022-10-30', 200, 100, true), ('2022-10-31', 202, 101, true), "
+            "('2022-10-31', 400, 200, true), ('2022-11-01', 204, 102, true), "
+            "('2022-11-02', 206, 103, true), ('2022-11-03', 208, 104, true), "
+            "('2022-11-04', 210, 105, true), ('2022-11-05', 212, 106, true), "
+            "('2022-11-06', 214, 107, true), ('2022-11-07', 216, 108, true), "
+            "('2022-11-08', 218, 218, false)"
+        )
+        rows = con.execute(case["reference_sql"]).fetchall()
+    reference = {
+        "columns": ["ride_date", "journeys"],
+        "rows": [[str(row[0]), row[1]] for row in rows],
+    }
+    assert reference["rows"] == [
+        ["2022-10-31", 301],
+        ["2022-11-01", 102],
+        ["2022-11-02", 103],
+        ["2022-11-03", 104],
+        ["2022-11-04", 105],
+        ["2022-11-05", 106],
+        ["2022-11-06", 107],
+        ["2022-11-07", 108],
+    ]
+    scoring = implementation("scoring")
+    answer = "301; 102; 103; 104; 105; 106; 107; 108"
+    assert not all(
+        check["ok"] for check in scoring.score_answer(case, answer, reference, "v")
+    )
+    assert all(
+        check["ok"]
+        for check in scoring.score_answer(
+            case, answer + " proje tahmini", reference, "v"
+        )
+    )
+
+
 @pytest.mark.parametrize(
     "sql",
     [

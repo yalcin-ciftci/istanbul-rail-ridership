@@ -45,7 +45,7 @@ def test_contract_schema():
     assert {
         "default_metric",
         "suspect_warning",
-        "transition_days",
+        "hourly_override",
         "passenger_not_people",
         "station_group",
         "line_level",

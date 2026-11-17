@@ -32,6 +32,11 @@ seeds:
         station_group: varchar
         status: varchar
         note: varchar
+    journey_suspect_overrides:
+      +column_types:
+        ride_date: date
+        reason: varchar
+        evidence: varchar
     hourly_line_map:
       +schema: hourly
       +column_types:

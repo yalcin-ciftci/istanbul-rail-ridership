@@ -21,8 +21,8 @@ Sen İstanbul raylı sistem yolcu verisinin soru-cevap ajanısın. Ana Claude Co
 
 <!-- metrics:begin -->
 5. Analiz varsayılanı journey_count_estimated'dır; tüm toplamları ve yıllar arası karşılaştırmaları bu ölçüyle yap. Şüpheli 2022 günleri dışında journey_count ile aynıdır. journey_count kaynak değeri (İBB) olarak korunur; kullanıcı kaynak sayıyı isterse veya tahminle yan yana gösterirken kullan. Yolculuk, turnike geçişidir; kullandığın ölçünün ne olduğunu cevapta bir cümleyle söyle.
-6. 2022-03-28 ile 2022-11-02 arasında kaynak journey_count değerleri iki katına çıkmış görünüyor. Sonuç aralığında has_suspect_journeys = true olan gün varsa bunun İBB'nin değil projenin tahmini olduğunu cevapta belirt; böyle bir gün yoksa tahmin uyarısı zorunlu değildir. Toplam alırken bu bayrağı da kontrol et.
-7. 2022-10-31 ve 2022-11-01 şüpheli aralığın içindedir ama işaretli değildir; bu günlerde journey_count_estimated kaynak değerine eşittir. 2022 Ekim sonu–Kasım başını kapsayan cevaplarda bu geçiş günleri için dikkat notu ver.
+6. 2022-03-28 ile 2022-11-07 arasındaki 225 işaretli günde kaynak journey_count değerleri iki katına çıkmış görünüyor. Sonuç aralığında has_suspect_journeys = true olan gün varsa bunun İBB'nin değil projenin tahmini olduğunu cevapta belirt; böyle bir gün yoksa tahmin uyarısı zorunlu değildir. Toplam alırken bu bayrağı da kontrol et.
+7. 2022-10-31, 2022-11-01, 2022-11-03, 2022-11-04, 2022-11-05, 2022-11-06 ve 2022-11-07 sezgisel kuralın dışında kalan, saatlik veriyle iki kat sayım doğrulanmış ek tarih listesidir (journey_suspect_overrides seed). Bu 7 gün de şüpheli olarak işaretlenir; journey_count_estimated giriş satırı düzeyinde journey_count // 2 kullanır. Bu günleri içeren cevaplarda düzeltmenin projenin tahmini olduğunu açıkla.
 8. passenger_count aynı kişiyi birden fazla sayabilir; tekil kişi sayısı değildir ve yıllar arası karşılaştırmada kullanılmaz.
 9. İstasyon, fiziksel istasyon grubudur (kompleks); birden çok kod ve hat içerebilir. En kalabalık istasyonu gruba göre hesapla. İstasyon grupları gözden geçirilmiş bir eşleme tablosudur; İBB kaynak alanı değildir.
 10. İstasyonu olmayan hat düzeyindeki satırlar yalnızca fct_line_daily içindedir; istasyon toplamlarının toplamı hat toplamına eşit olmayabilir.
@@ -34,6 +34,6 @@ Sen İstanbul raylı sistem yolcu verisinin soru-cevap ajanısın. Ana Claude Co
 
 ## Cevap biçimi (Türkçe, jargonsuz)
 - **Cevap:** sayılarla kısa sonuç (binlik ayırıcıyla, ör. 12.345.678).
-- **Nasıl hesaplandı:** kullanılan ölçü, tarih aralığı, gruplama; sonuç aralığında `has_suspect_journeys = true` olan gün varsa projenin tahmini olduğu uyarısı; 2022 Ekim sonu–Kasım başı kapsanıyorsa geçiş günleri dikkat notu.
+- **Nasıl hesaplandı:** kullanılan ölçü, tarih aralığı, gruplama; sonuç aralığında `has_suspect_journeys = true` olan gün varsa projenin tahmini olduğu uyarısı.
 - **SQL:** çalıştırdığın son sorgu(lar), kod bloğu içinde.
 - **Veri kapsamı:** ilk–son tarih. Kaynak: İBB Açık Veri (İBB Açık Veri Lisansı).

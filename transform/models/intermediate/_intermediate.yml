@@ -13,7 +13,8 @@ models:
     description: >
       One row per ride_date from deduplicated entrances. Flag days when at least
       99 percent of journey counts are even and total journeys / total passengers
-      is at least 1.8. A zero passenger total yields a NULL ratio.
+      is at least 1.8, or the date is in journey_suspect_overrides (hourly-confirmed
+      doubling). A zero passenger total yields a NULL ratio.
     columns:
       - name: ride_date
         data_tests: [not_null, unique]
@@ -24,7 +25,9 @@ models:
       - name: journey_passenger_ratio
         description: Total journey_count divided by total passenger_count.
       - name: journey_suspect
-        description: Whether both daily anomaly thresholds are met.
+        description: Whether the daily anomaly rule or hourly-confirmed date override applies.
+      - name: journey_suspect_source
+        description: "rule if both thresholds are met (takes precedence), hourly_override if only seeded, NULL otherwise."
   - name: int_rail_entrance_daily
     description: >
       Deduplicated entrance-day rows joined to daily journey quality. Retains all
@@ -66,8 +69,48 @@ unit_tests:
           - {ride_date: '2022-04-02', journey_count: 210, passenger_count: 100}
           - {ride_date: '2022-04-03', journey_count: 206, passenger_count: 200}
           - {ride_date: '2022-04-03', journey_count: 206, passenger_count: 200}
+      - input: ref('journey_suspect_overrides')
+        rows: []
     expect:
       rows:
         - {ride_date: '2022-04-01', row_count: 2, even_share: 1.0, journey_passenger_ratio: 2.1, journey_suspect: true}
         - {ride_date: '2022-04-02', row_count: 4, even_share: 0.5, journey_passenger_ratio: 2.1, journey_suspect: false}
         - {ride_date: '2022-04-03', row_count: 2, even_share: 1.0, journey_passenger_ratio: 1.03, journey_suspect: false}
+
+  - name: test_journey_quality_hourly_overrides
+    model: int_journey_quality_daily
+    given:
+      - input: ref('int_rail_entrance_deduped')
+        rows:
+          - {ride_date: '2022-04-01', journey_count: 210, passenger_count: 100}
+          - {ride_date: '2022-10-31', journey_count: 211, passenger_count: 100}
+          - {ride_date: '2022-11-08', journey_count: 107, passenger_count: 100}
+          - {ride_date: '2022-11-01', journey_count: 210, passenger_count: 100}
+      - input: ref('journey_suspect_overrides')
+        rows:
+          - {ride_date: '2022-10-31'}
+          - {ride_date: '2022-11-01'}
+    expect:
+      rows:
+        - {ride_date: '2022-04-01', journey_suspect: true, journey_suspect_source: rule}
+        - {ride_date: '2022-10-31', journey_suspect: true, journey_suspect_source: hourly_override}
+        - {ride_date: '2022-11-08', journey_suspect: false, journey_suspect_source: null}
+        - {ride_date: '2022-11-01', journey_suspect: true, journey_suspect_source: rule}
+
+seeds:
+  - name: journey_suspect_overrides
+    description: Hourly-confirmed 2022 daily source doubling missed by the heuristic rule.
+    columns:
+      - name: ride_date
+        description: 2022 day whose daily source journeys are confirmed doubled by hourly turnstile passages; it is flagged as suspect like the rule-based days.
+        data_tests: [not_null, unique]
+      - name: reason
+        description: Why the day is added outside the heuristic rule; always hourly_confirmed_doubling.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['hourly_confirmed_doubling']
+      - name: evidence
+        description: Hourly passages divided by daily source journeys for the day, and the reconciliation commit that measured it.
+        data_tests: [not_null]
