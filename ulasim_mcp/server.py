@@ -1,6 +1,7 @@
 """İstanbul ulaşım verileri için salt okunur, stdio tabanlı MCP sunucusu."""
 
 import hashlib
+import json
 import math
 import os
 import sys
@@ -17,12 +18,36 @@ import duckdb
 from mcp.server.mcpserver import MCPServer
 
 SORGU_BELLEK_SINIRI = "2GiB"
+YANIT_BOYUTU_IPUCU = "Sonuç karakter bütçesini aştı; sütunları azaltın, toplulaştırın ya da filtreyi daraltın."
+KAYNAK_IPUCU = "Tarih aralığını daraltın ya da önce toplulaştırın."
 
 # Direct stdio execution must also find the shared repository-local loader.
 if not __package__:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from ulasim_mcp.metrics import load_contract
+
+
+def _error(message: str, kind: str, hint: str | None = None) -> dict[str, Any]:
+    return {"hata": message, "hata_turu": kind, "ipucu": hint}
+
+
+def _exception_error(exc: Exception) -> dict[str, Any]:
+    if isinstance(exc, duckdb.ParserException):
+        return _error(
+            str(exc),
+            "sql_ayristirma",
+            "Tek bir DuckDB SELECT ifadesi yazın; noktalı virgülle birden çok ifade göndermeyin.",
+        )
+    if isinstance(exc, (duckdb.BinderException, duckdb.CatalogException)):
+        return _error(
+            str(exc),
+            "sql_baglama",
+            "Tablo ve kolon adlarını önce `sema` ile kontrol edin; yalnız `marts` şeması vardır.",
+        )
+    if isinstance(exc, duckdb.OutOfMemoryException):
+        return _error(str(exc), "bellek", KAYNAK_IPUCU)
+    return _error(str(exc), "diger")
 
 
 def database_path() -> Path:
@@ -50,11 +75,12 @@ def _with_connection(
             },
         )
     except (duckdb.Error, OSError, ValueError) as exc:
-        return {
-            "hata": "Veritabanı şu an kullanılamıyor (güncelleniyor olabilir): "
+        return _error(
+            "Veritabanı şu an kullanılamıyor (güncelleniyor olabilir): "
             + str(exc)
-            + ". Analiz kopyasını üretin: uv run python tools/publish_analysis_db.py"
-        }
+            + ". Analiz kopyasını üretin: uv run python tools/publish_analysis_db.py",
+            "baglanti",
+        )
     try:
         with con:
             outside_marts = con.execute(
@@ -71,13 +97,14 @@ def _with_connection(
                 ["marts", "marts"],
             ).fetchone()
             if outside_marts is not None:
-                return {
-                    "hata": "Bu veritabanı yalnız marts şemasını içermelidir. "
-                    "Analiz kopyasını üretin: uv run python tools/publish_analysis_db.py"
-                }
+                return _error(
+                    "Bu veritabanı yalnız marts şemasını içermelidir. "
+                    "Analiz kopyasını üretin: uv run python tools/publish_analysis_db.py",
+                    "sozlesme",
+                )
             return action(con)
     except (duckdb.Error, ValueError) as exc:
-        return {"hata": str(exc)}
+        return _exception_error(exc)
 
 
 def _json_value(value: Any) -> Any:
@@ -196,18 +223,29 @@ def sorgu(sql: str, satir_siniri: int = 200) -> dict[str, Any]:
     def execute(con: duckdb.DuckDBPyConnection) -> dict[str, Any]:
         statements = con.extract_statements(sql)
         if len(statements) != 1 or statements[0].type != duckdb.StatementType.SELECT:
-            return {"hata": "Sorgu tek bir SELECT ifadesi içermelidir."}
+            return _error("Sorgu tek bir SELECT ifadesi içermelidir.", "girdi")
         limit = max(1, min(1000, satir_siniri))
         try:
             timeout = float(os.environ.get("ULASIM_SORGU_ZAMAN_ASIMI", "30"))
         except ValueError:
-            return {
-                "hata": "ULASIM_SORGU_ZAMAN_ASIMI pozitif, sonlu bir saniye olmalıdır."
-            }
+            return _error(
+                "ULASIM_SORGU_ZAMAN_ASIMI pozitif, sonlu bir saniye olmalıdır.", "girdi"
+            )
         if not math.isfinite(timeout) or timeout <= 0:
-            return {
-                "hata": "ULASIM_SORGU_ZAMAN_ASIMI pozitif, sonlu bir saniye olmalıdır."
-            }
+            return _error(
+                "ULASIM_SORGU_ZAMAN_ASIMI pozitif, sonlu bir saniye olmalıdır.", "girdi"
+            )
+        try:
+            character_limit = int(
+                os.environ.get("ULASIM_YANIT_KARAKTER_SINIRI", "50000")
+            )
+            if character_limit <= 0:
+                raise ValueError
+        except ValueError:
+            return _error(
+                "ULASIM_YANIT_KARAKTER_SINIRI pozitif, sonlu bir tam sayı olmalıdır.",
+                "girdi",
+            )
         timed_out = threading.Event()
 
         def interrupt() -> None:
@@ -229,16 +267,49 @@ def sorgu(sql: str, satir_siniri: int = 200) -> dict[str, Any]:
             timer.cancel()
             timer.join()
         if timed_out.is_set():
-            return {"hata": f"Sorgu zaman aşımı: {timeout:g} saniye sınırı aşıldı."}
+            return _error(
+                f"Sorgu zaman aşımı: {timeout:g} saniye sınırı aşıldı.",
+                "zaman_asimi",
+                KAYNAK_IPUCU,
+            )
+        result_rows = [[_json_value(value) for value in row] for row in rows[:limit]]
+        reason = "satir_siniri" if len(rows) > limit else None
+        if len(json.dumps(result_rows, ensure_ascii=False)) > character_limit:
+            if (
+                result_rows
+                and len(json.dumps(result_rows[:1], ensure_ascii=False))
+                > character_limit
+            ):
+                return _error(
+                    "İlk satır yanıt karakter bütçesini aşıyor.",
+                    "yanit_boyutu",
+                    YANIT_BOYUTU_IPUCU,
+                )
+            low, high = 0, len(result_rows)
+            while low < high:
+                middle = (low + high + 1) // 2
+                if (
+                    len(json.dumps(result_rows[:middle], ensure_ascii=False))
+                    <= character_limit
+                ):
+                    low = middle
+                else:
+                    high = middle - 1
+            result_rows = result_rows[:low]
+            reason = "karakter_siniri"
         version = _data_version(con)
-        return {
+        result = {
             "veri_surumu": version["kimlik"] if version is not None else None,
             "kolonlar": columns,
-            "satirlar": [[_json_value(value) for value in row] for row in rows[:limit]],
-            "satir_sayisi": min(len(rows), limit),
-            "kesildi": len(rows) > limit,
+            "satirlar": result_rows,
+            "satir_sayisi": len(result_rows),
+            "kesildi": reason is not None,
             "sure_ms": round((time.perf_counter() - started) * 1000, 3),
+            "kesilme_nedeni": reason,
         }
+        if reason == "karakter_siniri":
+            result["not"] = YANIT_BOYUTU_IPUCU
+        return result
 
     return _with_connection(execute)
 
@@ -344,7 +415,7 @@ def istasyon_bul(ad: str, en_fazla: int = 10) -> dict[str, Any]:
     """İstasyon adını veya yazım varyantını arayarak grup, kod, hat ve tarihleri bulun."""
     key = _match_key(ad)
     if not key:
-        return {"hata": "İstasyon adı boş olamaz."}
+        return _error("İstasyon adı boş olamaz.", "girdi")
     limit = max(1, min(50, en_fazla))
     return _with_connection(lambda con: _find_stations(con, key, limit))
 
