@@ -448,7 +448,9 @@ def test_tools_reject_database_with_non_marts_objects(db, schema, kind, tool, ar
         con.execute(f"CREATE {kind} {schema}.x AS SELECT 42 AS hidden")
     assert getattr(load_server(), tool)(*args) == {
         "hata": "Bu veritabanı yalnız marts şemasını içermelidir. Analiz kopyasını üretin: "
-        "uv run python tools/publish_analysis_db.py"
+        "uv run python tools/publish_analysis_db.py",
+        "hata_turu": "sozlesme",
+        "ipucu": None,
     }
     # Rejection also releases the connection.
     with duckdb.connect(str(db)) as con:
@@ -636,3 +638,157 @@ def test_stdio_integration_lists_tools_and_calls_sorgu(db):
                 assert result.structured_content["satirlar"] == [[800]]
 
     anyio.run(exercise)
+
+
+SIZE_HINT = "Sonuç karakter bütçesini aştı; sütunları azaltın, toplulaştırın ya da filtreyi daraltın."
+SQL_HINT = "Tek bir DuckDB SELECT ifadesi yazın; noktalı virgülle birden çok ifade göndermeyin."
+BIND_HINT = "Tablo ve kolon adlarını önce `sema` ile kontrol edin; yalnız `marts` şeması vardır."
+TIME_HINT = "Tarih aralığını daraltın ya da önce toplulaştırın."
+
+
+@pytest.mark.parametrize("limit", [3, 10])
+def test_character_budget_keeps_longest_unicode_prefix(db, monkeypatch, limit):
+    monkeypatch.setenv("ULASIM_YANIT_KARAKTER_SINIRI", "16")
+    result = load_server().sorgu(
+        "SELECT value FROM (VALUES (1, 'İ'), (2, 'ş'), (3, 'uzun'), (4, 'son')) t(i, value) ORDER BY i",
+        limit,
+    )
+    assert result["satirlar"] == [["İ"], ["ş"]]
+    assert len(json.dumps(result["satirlar"], ensure_ascii=False)) == 14
+    assert result["satir_sayisi"] == 2
+    assert result["kesildi"] is True
+    assert result["kesilme_nedeni"] == "karakter_siniri"
+    assert result["not"] == SIZE_HINT
+
+
+@pytest.mark.parametrize(
+    "sql,limit,reason",
+    [
+        ("SELECT i FROM range(3) t(i)", 2, "satir_siniri"),
+        ("SELECT i FROM range(2) t(i)", 2, None),
+        ("SELECT 1 WHERE false", 2, None),
+    ],
+)
+def test_truncation_reason_and_existing_field_order(db, sql, limit, reason):
+    result = load_server().sorgu(sql, limit)
+    assert result["kesilme_nedeni"] == reason
+    assert list(result) == [
+        "veri_surumu",
+        "kolonlar",
+        "satirlar",
+        "satir_sayisi",
+        "kesildi",
+        "sure_ms",
+        "kesilme_nedeni",
+    ]
+    assert "not" not in result
+
+
+@pytest.mark.parametrize("budget,count", [(14, 2), (13, 1)])
+def test_character_budget_exact_json_boundary(db, monkeypatch, budget, count):
+    monkeypatch.setenv("ULASIM_YANIT_KARAKTER_SINIRI", str(budget))
+    result = load_server().sorgu("SELECT 'İ' FROM range(2)")
+    assert result["satir_sayisi"] == count
+    assert result["kesilme_nedeni"] == (None if count == 2 else "karakter_siniri")
+
+
+@pytest.mark.parametrize("configured", [False, True])
+def test_first_row_over_budget_is_structured_error(db, monkeypatch, configured):
+    monkeypatch.delenv("ULASIM_YANIT_KARAKTER_SINIRI", raising=False)
+    if configured:
+        monkeypatch.setenv("ULASIM_YANIT_KARAKTER_SINIRI", "10")
+    result = load_server().sorgu("SELECT repeat('x', 50000)")
+    assert result["hata_turu"] == "yanit_boyutu"
+    assert result["ipucu"] == SIZE_HINT
+    assert "hata" in result and "satirlar" not in result
+
+
+@pytest.mark.parametrize("value", ["abc", "", "0", "-1", "inf", "nan", "1.5", "1e3"])
+def test_invalid_character_budget_is_input_error(db, monkeypatch, value):
+    monkeypatch.setenv("ULASIM_YANIT_KARAKTER_SINIRI", value)
+    result = load_server().sorgu("SELECT 1")
+    assert "ULASIM_YANIT_KARAKTER_SINIRI" in result["hata"]
+    assert result["hata_turu"] == "girdi"
+    assert "ipucu" in result
+
+
+@pytest.mark.parametrize(
+    "sql,kind,hint",
+    [
+        ("SELEC 1", "sql_ayristirma", SQL_HINT),
+        ("SELECT nonexistent FROM marts.dim_station", "sql_baglama", BIND_HINT),
+        ("SELECT * FROM marts.nonexistent", "sql_baglama", BIND_HINT),
+        ("SELECT 1; SELECT 2", "girdi", None),
+    ],
+)
+def test_query_structured_errors(db, sql, kind, hint):
+    result = load_server().sorgu(sql)
+    assert result["hata_turu"] == kind
+    assert result["ipucu"] == hint
+    assert result["hata"]
+
+
+@pytest.mark.parametrize(
+    "tool,args",
+    [("sema", ()), ("sorgu", ("SELECT 1",)), ("istasyon_bul", ("yenikapi",))],
+)
+@pytest.mark.parametrize("failure", ["missing", "outside"])
+def test_all_tools_connection_and_contract_error_types(
+    db, tmp_path, monkeypatch, tool, args, failure
+):
+    if failure == "missing":
+        monkeypatch.setenv("ULASIM_DB", str(tmp_path / "missing.duckdb"))
+    else:
+        with duckdb.connect(str(db)) as con:
+            con.execute("CREATE TABLE main.outside AS SELECT 1 AS x")
+    result = getattr(load_server(), tool)(*args)
+    assert result["hata_turu"] == ("baglanti" if failure == "missing" else "sozlesme")
+    assert "ipucu" in result
+
+
+def test_timeout_has_structured_type(db, monkeypatch):
+    monkeypatch.setenv("ULASIM_SORGU_ZAMAN_ASIMI", "0.1")
+    result = load_server().sorgu("SELECT sum(sin(i)) FROM range(1000000000000) t(i)")
+    assert result["hata_turu"] == "zaman_asimi"
+    assert result["ipucu"] == TIME_HINT
+
+
+def test_invalid_timeout_has_input_type(db, monkeypatch):
+    monkeypatch.setenv("ULASIM_SORGU_ZAMAN_ASIMI", "nan")
+    assert load_server().sorgu("SELECT 1")["hata_turu"] == "girdi"
+
+
+def test_blank_station_has_input_type():
+    assert load_server().istasyon_bul(" ") == {
+        "hata": "İstasyon adı boş olamaz.",
+        "hata_turu": "girdi",
+        "ipucu": None,
+    }
+
+
+@pytest.mark.parametrize(
+    "exception,kind,hint",
+    [(duckdb.OutOfMemoryException, "bellek", TIME_HINT), (duckdb.Error, "diger", None)],
+)
+@pytest.mark.parametrize(
+    "tool,args,action",
+    [
+        ("sema", (), "_schema"),
+        ("sorgu", ("SELECT 1",), "_data_version"),
+        ("istasyon_bul", ("yenikapi",), "_find_stations"),
+    ],
+)
+def test_shared_error_classifier_uses_exception_class(
+    db, monkeypatch, exception, kind, hint, tool, args, action
+):
+    module = load_server()
+
+    def fail(*args):
+        raise exception("Parser Binder Out of Memory")
+
+    monkeypatch.setattr(module, action, fail)
+    assert getattr(module, tool)(*args) == {
+        "hata": "Parser Binder Out of Memory",
+        "hata_turu": kind,
+        "ipucu": hint,
+    }
