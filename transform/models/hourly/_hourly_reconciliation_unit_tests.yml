@@ -1,0 +1,2248 @@
+version: 2
+unit_tests:
+- name: reconciliation_status_priority_window_and_line_sum
+  model: fct_hourly_daily_reconciliation
+  given:
+  - input: ref('fct_station_group_hourly')
+    rows:
+    - ride_date: '2023-01-02'
+      station_group: OnlyH
+      passage_count: 100
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2023-01-02'
+      station_group: ZeroD
+      passage_count: 100
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2023-01-02'
+      station_group: ZeroH
+      passage_count: 0
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2023-01-02'
+      station_group: Match
+      passage_count: 40
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2023-01-02'
+      station_group: Suspect
+      passage_count: 99
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2023-01-02'
+      station_group: Doubled
+      passage_count: 50
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2023-01-02'
+      station_group: Mismatch
+      passage_count: 80
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2023-01-02'
+      station_group: Lower
+      passage_count: 97
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2023-01-02'
+      station_group: Upper
+      passage_count: 103
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2023-01-02'
+      station_group: DLower
+      passage_count: 47
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2023-01-02'
+      station_group: DUpper
+      passage_count: 53
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2023-01-02'
+      station_group: NullD
+      passage_count: 100
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2023-01-02'
+      station_group: Match
+      passage_count: 60
+      ride_hour: 8
+      line_code: M2
+    - ride_date: '2023-02-01'
+      station_group: Incomplete
+      passage_count: 100
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2023-03-01'
+      station_group: Empty
+      passage_count: 100
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2020-12-31'
+      station_group: Outside
+      passage_count: 100
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2024-11-01'
+      station_group: Outside
+      passage_count: 100
+      ride_hour: 8
+      line_code: M1
+  - input: ref('fct_station_group_daily')
+    rows:
+    - ride_date: '2023-01-02'
+      station_group: OnlyD
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+    - ride_date: '2023-01-02'
+      station_group: ZeroD
+      journey_count: 0
+      journey_count_estimated: 0
+      has_suspect_journeys: false
+    - ride_date: '2023-01-02'
+      station_group: ZeroH
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+    - ride_date: '2023-01-02'
+      station_group: Match
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+    - ride_date: '2023-01-02'
+      station_group: Suspect
+      journey_count: 200
+      journey_count_estimated: 100
+      has_suspect_journeys: true
+    - ride_date: '2023-01-02'
+      station_group: Doubled
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+    - ride_date: '2023-01-02'
+      station_group: Mismatch
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+    - ride_date: '2023-01-02'
+      station_group: Lower
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+    - ride_date: '2023-01-02'
+      station_group: Upper
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+    - ride_date: '2023-01-02'
+      station_group: DLower
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+    - ride_date: '2023-01-02'
+      station_group: DUpper
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+    - ride_date: '2023-01-02'
+      station_group: NullD
+      journey_count: null
+      journey_count_estimated: null
+      has_suspect_journeys: false
+    - ride_date: '2023-02-01'
+      station_group: Incomplete
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+    - ride_date: '2023-03-01'
+      station_group: Empty
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+    - ride_date: '2020-12-31'
+      station_group: Outside
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+    - ride_date: '2024-11-01'
+      station_group: Outside
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+  - input: ref('fct_hourly_coverage_month')
+    rows: &id001
+    - month: 2023-01
+      line_code: ALL
+      quality_flag: ok
+    - month: 2023-02
+      line_code: ALL
+      quality_flag: low_volume
+    - month: 2023-03
+      line_code: '*'
+      quality_flag: empty
+    - month: 2024-07
+      line_code: ALL
+      quality_flag: ok
+    - month: 2024-08
+      line_code: ALL
+      quality_flag: low_volume
+  expect:
+    rows:
+    - ride_date: '2023-01-02'
+      station_group: OnlyH
+      status: only_hourly
+      hourly_passage: 100
+      daily_journey_count: null
+      daily_journey_estimated: null
+      ratio_to_source: null
+      ratio_to_estimate: null
+      has_suspect_journeys: null
+      hourly_month_flag: ok
+    - ride_date: '2023-01-02'
+      station_group: OnlyD
+      status: only_daily
+      hourly_passage: null
+      daily_journey_count: 100
+      daily_journey_estimated: 100
+      ratio_to_source: null
+      ratio_to_estimate: null
+      has_suspect_journeys: false
+      hourly_month_flag: ok
+    - ride_date: '2023-01-02'
+      station_group: ZeroD
+      status: only_hourly
+      hourly_passage: 100
+      daily_journey_count: 0
+      daily_journey_estimated: 0
+      ratio_to_source: null
+      ratio_to_estimate: null
+      has_suspect_journeys: false
+      hourly_month_flag: ok
+    - ride_date: '2023-01-02'
+      station_group: ZeroH
+      status: only_daily
+      hourly_passage: 0
+      daily_journey_count: 100
+      daily_journey_estimated: 100
+      ratio_to_source: 0
+      ratio_to_estimate: 0
+      has_suspect_journeys: false
+      hourly_month_flag: ok
+    - ride_date: '2023-01-02'
+      station_group: Match
+      status: match
+      hourly_passage: 100
+      daily_journey_count: 100
+      daily_journey_estimated: 100
+      ratio_to_source: 1
+      ratio_to_estimate: 1
+      has_suspect_journeys: false
+      hourly_month_flag: ok
+    - ride_date: '2023-01-02'
+      station_group: Suspect
+      status: match
+      hourly_passage: 99
+      daily_journey_count: 200
+      daily_journey_estimated: 100
+      ratio_to_source: 0.495
+      ratio_to_estimate: 0.99
+      has_suspect_journeys: true
+      hourly_month_flag: ok
+    - ride_date: '2023-01-02'
+      station_group: Doubled
+      status: daily_doubled
+      hourly_passage: 50
+      daily_journey_count: 100
+      daily_journey_estimated: 100
+      ratio_to_source: 0.5
+      ratio_to_estimate: 0.5
+      has_suspect_journeys: false
+      hourly_month_flag: ok
+    - ride_date: '2023-01-02'
+      station_group: Mismatch
+      status: mismatch
+      hourly_passage: 80
+      daily_journey_count: 100
+      daily_journey_estimated: 100
+      ratio_to_source: 0.8
+      ratio_to_estimate: 0.8
+      has_suspect_journeys: false
+      hourly_month_flag: ok
+    - ride_date: '2023-01-02'
+      station_group: Lower
+      status: match
+      hourly_passage: 97
+      daily_journey_count: 100
+      daily_journey_estimated: 100
+      ratio_to_source: 0.97
+      ratio_to_estimate: 0.97
+      has_suspect_journeys: false
+      hourly_month_flag: ok
+    - ride_date: '2023-01-02'
+      station_group: Upper
+      status: match
+      hourly_passage: 103
+      daily_journey_count: 100
+      daily_journey_estimated: 100
+      ratio_to_source: 1.03
+      ratio_to_estimate: 1.03
+      has_suspect_journeys: false
+      hourly_month_flag: ok
+    - ride_date: '2023-01-02'
+      station_group: DLower
+      status: daily_doubled
+      hourly_passage: 47
+      daily_journey_count: 100
+      daily_journey_estimated: 100
+      ratio_to_source: 0.47
+      ratio_to_estimate: 0.47
+      has_suspect_journeys: false
+      hourly_month_flag: ok
+    - ride_date: '2023-01-02'
+      station_group: DUpper
+      status: daily_doubled
+      hourly_passage: 53
+      daily_journey_count: 100
+      daily_journey_estimated: 100
+      ratio_to_source: 0.53
+      ratio_to_estimate: 0.53
+      has_suspect_journeys: false
+      hourly_month_flag: ok
+    - ride_date: '2023-01-02'
+      station_group: NullD
+      status: only_hourly
+      hourly_passage: 100
+      daily_journey_count: null
+      daily_journey_estimated: null
+      ratio_to_source: null
+      ratio_to_estimate: null
+      has_suspect_journeys: false
+      hourly_month_flag: ok
+    - ride_date: '2023-02-01'
+      station_group: Incomplete
+      status: hourly_incomplete
+      hourly_passage: 100
+      daily_journey_count: 100
+      daily_journey_estimated: 100
+      ratio_to_source: 1
+      ratio_to_estimate: 1
+      has_suspect_journeys: false
+      hourly_month_flag: low_volume
+    - ride_date: '2023-03-01'
+      station_group: Empty
+      status: hourly_incomplete
+      hourly_passage: 100
+      daily_journey_count: 100
+      daily_journey_estimated: 100
+      ratio_to_source: 1
+      ratio_to_estimate: 1
+      has_suspect_journeys: false
+      hourly_month_flag: empty
+- name: reconciliation_day_excludes_one_sided_and_no_overlap
+  model: fct_hourly_daily_reconciliation_day
+  given:
+  - input: ref('fct_hourly_daily_reconciliation')
+    format: sql
+    rows: 'select date ''2023-01-02'' as ride_date, ''Both'' as station_group, ''2023-01''
+      as month, 100 as hourly_passage, 200 as daily_journey_count, 100 as daily_journey_estimated,
+      true as has_suspect_journeys, null::double as ratio_to_source, null::double
+      as ratio_to_estimate, ''ok'' as hourly_month_flag, ''match'' as status
+
+      union all
+
+      select date ''2023-01-02'' as ride_date, ''D'' as station_group, ''2023-01''
+      as month, null as hourly_passage, 900 as daily_journey_count, 900 as daily_journey_estimated,
+      false as has_suspect_journeys, null::double as ratio_to_source, null::double
+      as ratio_to_estimate, ''ok'' as hourly_month_flag, ''only_daily'' as status
+
+      union all
+
+      select date ''2023-01-02'' as ride_date, ''H'' as station_group, ''2023-01''
+      as month, 800 as hourly_passage, null as daily_journey_count, null as daily_journey_estimated,
+      null as has_suspect_journeys, null::double as ratio_to_source, null::double
+      as ratio_to_estimate, ''ok'' as hourly_month_flag, ''only_hourly'' as status
+
+      union all
+
+      select date ''2023-01-03'' as ride_date, ''D'' as station_group, ''2023-01''
+      as month, 0 as hourly_passage, 100 as daily_journey_count, 100 as daily_journey_estimated,
+      false as has_suspect_journeys, null::double as ratio_to_source, null::double
+      as ratio_to_estimate, ''ok'' as hourly_month_flag, ''only_daily'' as status
+
+      union all
+
+      select date ''2023-01-03'' as ride_date, ''H'' as station_group, ''2023-01''
+      as month, 100 as hourly_passage, 0 as daily_journey_count, 0 as daily_journey_estimated,
+      false as has_suspect_journeys, null::double as ratio_to_source, null::double
+      as ratio_to_estimate, ''ok'' as hourly_month_flag, ''only_hourly'' as status
+
+      union all
+
+      select date ''2023-01-04'' as ride_date, ''Both'' as station_group, ''2023-01''
+      as month, 100 as hourly_passage, 100 as daily_journey_count, 100 as daily_journey_estimated,
+      false as has_suspect_journeys, null::double as ratio_to_source, null::double
+      as ratio_to_estimate, ''low_volume'' as hourly_month_flag, ''hourly_incomplete''
+      as status
+
+      union all
+
+      select date ''2023-01-05'' as ride_date, ''Both'' as station_group, ''2023-01''
+      as month, 50 as hourly_passage, 100 as daily_journey_count, 100 as daily_journey_estimated,
+      false as has_suspect_journeys, null::double as ratio_to_source, null::double
+      as ratio_to_estimate, ''ok'' as hourly_month_flag, ''daily_doubled'' as status
+
+      union all
+
+      select date ''2023-01-06'' as ride_date, ''Both'' as station_group, ''2023-01''
+      as month, 80 as hourly_passage, 100 as daily_journey_count, 100 as daily_journey_estimated,
+      false as has_suspect_journeys, null::double as ratio_to_source, null::double
+      as ratio_to_estimate, ''ok'' as hourly_month_flag, ''mismatch'' as status'
+  expect:
+    rows:
+    - ride_date: '2023-01-02'
+      groups_both: 1
+      groups_only_daily: 1
+      groups_only_hourly: 1
+      hourly_passage: 100
+      daily_journey_count: 200
+      daily_journey_estimated: 100
+      has_suspect_journeys: true
+      ratio_to_source: 0.5
+      ratio_to_estimate: 1
+      status: match
+    - ride_date: '2023-01-03'
+      groups_both: 0
+      groups_only_daily: 1
+      groups_only_hourly: 1
+      hourly_passage: null
+      daily_journey_count: null
+      daily_journey_estimated: null
+      has_suspect_journeys: false
+      ratio_to_source: null
+      ratio_to_estimate: null
+      status: no_overlap
+    - ride_date: '2023-01-04'
+      groups_both: 1
+      groups_only_daily: 0
+      groups_only_hourly: 0
+      hourly_passage: 100
+      daily_journey_count: 100
+      daily_journey_estimated: 100
+      has_suspect_journeys: false
+      ratio_to_source: 1.0
+      ratio_to_estimate: 1.0
+      status: hourly_incomplete
+    - ride_date: '2023-01-05'
+      groups_both: 1
+      groups_only_daily: 0
+      groups_only_hourly: 0
+      hourly_passage: 50
+      daily_journey_count: 100
+      daily_journey_estimated: 100
+      has_suspect_journeys: false
+      ratio_to_source: 0.5
+      ratio_to_estimate: 0.5
+      status: daily_doubled
+    - ride_date: '2023-01-06'
+      groups_both: 1
+      groups_only_daily: 0
+      groups_only_hourly: 0
+      hourly_passage: 80
+      daily_journey_count: 100
+      daily_journey_estimated: 100
+      has_suspect_journeys: false
+      ratio_to_source: 0.8
+      ratio_to_estimate: 0.8
+      status: mismatch
+- name: hour_profile_zero_fill_calendar_bands_and_zero_peak
+  model: fct_station_group_hour_profile
+  given:
+  - input: ref('fct_station_group_hourly')
+    rows:
+    - ride_date: '2023-01-02'
+      station_group: Bands
+      passage_count: 100
+      ride_hour: 0
+      line_code: M1
+    - ride_date: '2023-01-02'
+      station_group: Bands
+      passage_count: 33
+      ride_hour: 1
+      line_code: M1
+    - ride_date: '2023-01-02'
+      station_group: Bands
+      passage_count: 66
+      ride_hour: 2
+      line_code: M1
+    - ride_date: '2023-01-02'
+      station_group: Bands
+      passage_count: 67
+      ride_hour: 3
+      line_code: M1
+    - ride_date: '2023-01-03'
+      station_group: Bands
+      passage_count: 100
+      ride_hour: 0
+      line_code: M1
+    - ride_date: '2023-01-03'
+      station_group: Bands
+      passage_count: 33
+      ride_hour: 1
+      line_code: M1
+    - ride_date: '2023-01-03'
+      station_group: Bands
+      passage_count: 66
+      ride_hour: 2
+      line_code: M1
+    - ride_date: '2023-01-03'
+      station_group: Bands
+      passage_count: 67
+      ride_hour: 3
+      line_code: M1
+    - ride_date: '2023-01-04'
+      station_group: Bands
+      passage_count: 100
+      ride_hour: 0
+      line_code: M1
+    - ride_date: '2023-01-04'
+      station_group: Bands
+      passage_count: 33
+      ride_hour: 1
+      line_code: M1
+    - ride_date: '2023-01-04'
+      station_group: Bands
+      passage_count: 66
+      ride_hour: 2
+      line_code: M1
+    - ride_date: '2023-01-04'
+      station_group: Bands
+      passage_count: 67
+      ride_hour: 3
+      line_code: M1
+    - ride_date: '2023-01-02'
+      station_group: Bands
+      passage_count: 10
+      ride_hour: 4
+      line_code: M1
+    - ride_date: '2023-01-03'
+      station_group: Bands
+      passage_count: 30
+      ride_hour: 4
+      line_code: M1
+    - ride_date: '2023-01-07'
+      station_group: Bands
+      passage_count: 50
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2023-01-08'
+      station_group: Bands
+      passage_count: 25
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2022-12-31'
+      station_group: Bands
+      passage_count: 9999
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2024-08-01'
+      station_group: Bands
+      passage_count: 9999
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2023-02-01'
+      station_group: Bands
+      passage_count: 9999
+      ride_hour: 8
+      line_code: M1
+    - ride_date: '2023-01-02'
+      station_group: ZeroPeak
+      passage_count: 1
+      ride_hour: 0
+      line_code: M1
+    - ride_date: '2023-01-03'
+      station_group: ZeroPeak
+      passage_count: 1
+      ride_hour: 1
+      line_code: M1
+    - ride_date: '2023-01-04'
+      station_group: ZeroPeak
+      passage_count: 1
+      ride_hour: 2
+      line_code: M1
+    - ride_date: '2023-01-05'
+      station_group: NoDays
+      passage_count: 0
+      ride_hour: 8
+      line_code: M1
+  - input: ref('fct_hourly_coverage_month')
+    rows: *id001
+  expect:
+    rows:
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 0
+      typical_passage: 100.0
+      peak_reference: 100.0
+      relative_index: 1.0
+      band: busy
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 1
+      typical_passage: 33.0
+      peak_reference: 100.0
+      relative_index: 0.33
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 2
+      typical_passage: 66.0
+      peak_reference: 100.0
+      relative_index: 0.66
+      band: moderate
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 3
+      typical_passage: 67.0
+      peak_reference: 100.0
+      relative_index: 0.67
+      band: busy
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 4
+      typical_passage: 10.0
+      peak_reference: 100.0
+      relative_index: 0.1
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 5
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 6
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 7
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 8
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 9
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 10
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 11
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 12
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 13
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 14
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 15
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 16
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 17
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 18
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 19
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 20
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 21
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 22
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: weekday
+      ride_hour: 23
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 0
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 1
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 2
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 3
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 4
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 5
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 6
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 7
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 8
+      typical_passage: 50.0
+      peak_reference: 100.0
+      relative_index: 0.5
+      band: moderate
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 9
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 10
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 11
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 12
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 13
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 14
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 15
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 16
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 17
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 18
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 19
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 20
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 21
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 22
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: saturday
+      ride_hour: 23
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 0
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 1
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 2
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 3
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 4
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 5
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 6
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 7
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 8
+      typical_passage: 25.0
+      peak_reference: 100.0
+      relative_index: 0.25
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 9
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 10
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 11
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 12
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 13
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 14
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 15
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 16
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 17
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 18
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 19
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 20
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 21
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 22
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Bands
+      day_type: sunday
+      ride_hour: 23
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 0
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 1
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 2
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 3
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 4
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 5
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 6
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 7
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 8
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 9
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 10
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 11
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 12
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 13
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 14
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 15
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 16
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 17
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 18
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 19
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 20
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 21
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 22
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: ZeroPeak
+      day_type: weekday
+      ride_hour: 23
+      typical_passage: 0.0
+      peak_reference: 0.0
+      relative_index: null
+      band: null
+      baseline_days: 3
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+- name: reconciliation_missing_coverage_outer_thresholds_priority_and_endpoints
+  model: fct_hourly_daily_reconciliation
+  given:
+  - input: ref('fct_station_group_hourly')
+    rows:
+    - ride_date: '2023-04-01'
+      station_group: MissingCoverage
+      ride_hour: 8
+      line_code: M1
+      passage_count: 100
+    - ride_date: '2023-01-02'
+      station_group: BelowMatch
+      ride_hour: 8
+      line_code: M1
+      passage_count: 96
+    - ride_date: '2023-01-02'
+      station_group: AboveMatch
+      ride_hour: 8
+      line_code: M1
+      passage_count: 104
+    - ride_date: '2023-01-02'
+      station_group: BelowDoubled
+      ride_hour: 8
+      line_code: M1
+      passage_count: 46
+    - ride_date: '2023-01-02'
+      station_group: AboveDoubled
+      ride_hour: 8
+      line_code: M1
+      passage_count: 54
+    - ride_date: '2023-02-01'
+      station_group: OnlyHourlyLow
+      ride_hour: 8
+      line_code: M1
+      passage_count: 100
+    - ride_date: '2021-01-01'
+      station_group: WindowStart
+      ride_hour: 8
+      line_code: M1
+      passage_count: 100
+    - ride_date: '2024-10-31'
+      station_group: WindowEnd
+      ride_hour: 8
+      line_code: M1
+      passage_count: 100
+  - input: ref('fct_station_group_daily')
+    rows:
+    - ride_date: '2023-04-01'
+      station_group: MissingCoverage
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+    - ride_date: '2023-01-02'
+      station_group: BelowMatch
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+    - ride_date: '2023-01-02'
+      station_group: AboveMatch
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+    - ride_date: '2023-01-02'
+      station_group: BelowDoubled
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+    - ride_date: '2023-01-02'
+      station_group: AboveDoubled
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+    - ride_date: '2023-02-01'
+      station_group: OnlyDailyLow
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+    - ride_date: '2021-01-01'
+      station_group: WindowStart
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+    - ride_date: '2024-10-31'
+      station_group: WindowEnd
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+  - input: ref('fct_hourly_coverage_month')
+    rows:
+    - month: 2023-01
+      line_code: ALL
+      quality_flag: ok
+    - month: 2023-02
+      line_code: ALL
+      quality_flag: low_volume
+    - month: 2021-01
+      line_code: ALL
+      quality_flag: ok
+    - month: 2024-10
+      line_code: ALL
+      quality_flag: ok
+    - month: 2023-01
+      line_code: '*'
+      quality_flag: empty
+  expect:
+    rows:
+    - ride_date: '2023-04-01'
+      station_group: MissingCoverage
+      status: hourly_incomplete
+      hourly_month_flag: null
+      ratio_to_estimate: 1.0
+    - ride_date: '2023-01-02'
+      station_group: BelowMatch
+      status: mismatch
+      hourly_month_flag: ok
+      ratio_to_estimate: 0.96
+    - ride_date: '2023-01-02'
+      station_group: AboveMatch
+      status: mismatch
+      hourly_month_flag: ok
+      ratio_to_estimate: 1.04
+    - ride_date: '2023-01-02'
+      station_group: BelowDoubled
+      status: mismatch
+      hourly_month_flag: ok
+      ratio_to_estimate: 0.46
+    - ride_date: '2023-01-02'
+      station_group: AboveDoubled
+      status: mismatch
+      hourly_month_flag: ok
+      ratio_to_estimate: 0.54
+    - ride_date: '2023-02-01'
+      station_group: OnlyDailyLow
+      status: only_daily
+      hourly_month_flag: low_volume
+      ratio_to_estimate: null
+    - ride_date: '2023-02-01'
+      station_group: OnlyHourlyLow
+      status: only_hourly
+      hourly_month_flag: low_volume
+      ratio_to_estimate: null
+    - ride_date: '2021-01-01'
+      station_group: WindowStart
+      status: match
+      hourly_month_flag: ok
+      ratio_to_estimate: 1.0
+    - ride_date: '2024-10-31'
+      station_group: WindowEnd
+      status: match
+      hourly_month_flag: ok
+      ratio_to_estimate: 1.0
+- name: reconciliation_day_missing_flag_and_low_volume_no_overlap
+  model: fct_hourly_daily_reconciliation_day
+  given:
+  - input: ref('fct_hourly_daily_reconciliation')
+    rows:
+    - ride_date: '2023-04-01'
+      station_group: A
+      month: 2023-04
+      hourly_passage: 100
+      daily_journey_count: 100
+      daily_journey_estimated: 100
+      has_suspect_journeys: false
+      hourly_month_flag: null
+      status: hourly_incomplete
+    - ride_date: '2023-02-01'
+      station_group: A
+      month: 2023-02
+      hourly_passage: null
+      daily_journey_count: 100
+      daily_journey_estimated: 100
+      has_suspect_journeys: false
+      hourly_month_flag: low_volume
+      status: only_daily
+  expect:
+    rows:
+    - ride_date: '2023-04-01'
+      groups_both: 1
+      groups_only_daily: 0
+      groups_only_hourly: 0
+      hourly_month_flag: null
+      ratio_to_estimate: 1.0
+      status: hourly_incomplete
+    - ride_date: '2023-02-01'
+      groups_both: 0
+      groups_only_daily: 1
+      groups_only_hourly: 0
+      hourly_month_flag: low_volume
+      ratio_to_estimate: null
+      status: no_overlap
+- name: hour_profile_sums_lines_and_includes_baseline_endpoints
+  model: fct_station_group_hour_profile
+  given:
+  - input: ref('fct_station_group_hourly')
+    rows:
+    - ride_date: '2023-01-01'
+      station_group: Endpoints
+      ride_hour: 8
+      line_code: M1
+      passage_count: 40
+    - ride_date: '2023-01-01'
+      station_group: Endpoints
+      ride_hour: 8
+      line_code: M2
+      passage_count: 60
+    - ride_date: '2024-07-31'
+      station_group: Endpoints
+      ride_hour: 8
+      line_code: M1
+      passage_count: 40
+    - ride_date: '2024-07-31'
+      station_group: Endpoints
+      ride_hour: 8
+      line_code: M2
+      passage_count: 60
+  - input: ref('fct_hourly_coverage_month')
+    rows:
+    - month: 2023-01
+      line_code: ALL
+      quality_flag: ok
+    - month: 2024-07
+      line_code: ALL
+      quality_flag: ok
+  expect:
+    rows:
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 0
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 1
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 2
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 3
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 4
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 5
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 6
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 7
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 8
+      typical_passage: 100.0
+      peak_reference: 100.0
+      relative_index: 1.0
+      band: busy
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 9
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 10
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 11
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 12
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 13
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 14
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 15
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 16
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 17
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 18
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 19
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 20
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 21
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 22
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: sunday
+      ride_hour: 23
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 0
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 1
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 2
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 3
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 4
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 5
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 6
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 7
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 8
+      typical_passage: 100.0
+      peak_reference: 100.0
+      relative_index: 1.0
+      band: busy
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 9
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 10
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 11
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 12
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 13
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 14
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 15
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 16
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 17
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 18
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 19
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 20
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 21
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 22
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'
+    - station_group: Endpoints
+      day_type: weekday
+      ride_hour: 23
+      typical_passage: 0.0
+      peak_reference: 100.0
+      relative_index: 0.0
+      band: quiet
+      baseline_days: 1
+      baseline_start: '2023-01-01'
+      baseline_end: '2024-07-31'

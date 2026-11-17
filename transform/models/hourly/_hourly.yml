@@ -180,6 +180,200 @@ models:
           - partial_days
           - low_volume
           - ok
+- name: fct_hourly_daily_reconciliation
+  description: Tarih × istasyon grubu; iki kaynağın pencere içindeki FULL OUTER JOIN
+    mutabakatı. Öncelik only_daily, only_hourly, hourly_incomplete, match (tahmine
+    0,97–1,03), daily_doubled (kaynağa 0,47–0,53), mismatch.
+  columns:
+  - name: ride_date
+    description: Karşılaştırma tarihi; pencere 2021-01-01…2024-10-31.
+    data_tests:
+    - not_null
+  - name: station_group
+    description: Hatlar arasında ortak istasyon grubu.
+    data_tests:
+    - not_null
+  - name: month
+    description: YYYY-MM ayı.
+    data_tests:
+    - not_null
+  - name: hourly_passage
+    description: Hatlar toplanmış saatlik turnike geçişi.
+  - name: daily_journey_count
+    description: Grubun günlük kaynak yolculuk toplamı.
+  - name: daily_journey_estimated
+    description: Grubun mevcut 2022 kuralıyla yolculuk tahmini.
+  - name: has_suspect_journeys
+    description: Günlük kaynağın şüphe bayrağı; günlük kaynak yoksa NULL.
+  - name: ratio_to_source
+    description: Saatlik geçiş / günlük kaynak; payda sıfır veya NULL ise NULL.
+  - name: ratio_to_estimate
+    description: Saatlik geçiş / günlük tahmin; payda sıfır veya NULL ise NULL.
+  - name: hourly_month_flag
+    description: Ayın ALL kalite bayrağı; ALL satırı yoksa * satırının bayrağı.
+    data_tests:
+    - not_null
+  - name: status
+    description: Öncelik sırasıyla ilk tutan mutabakat durumu.
+    data_tests:
+    - not_null
+    - accepted_values:
+        arguments:
+          values:
+          - only_daily
+          - only_hourly
+          - hourly_incomplete
+          - match
+          - daily_doubled
+          - mismatch
+- name: fct_hourly_daily_reconciliation_day
+  description: Tarih başına mutabakat; toplamlar yalnız saatlik geçişi ve günlük kaynak
+    sayısı sıfır/NULL olmayan grupları içerir. Öncelik no_overlap, hourly_incomplete,
+    match, daily_doubled, mismatch.
+  columns:
+  - name: ride_date
+    description: Karşılaştırma tarihi; pencere 2021-01-01…2024-10-31.
+    data_tests:
+    - not_null
+  - name: month
+    description: YYYY-MM ayı.
+    data_tests:
+    - not_null
+  - name: groups_both
+    description: İki tarafı sıfır/NULL olmayan grup sayısı.
+    data_tests:
+    - not_null
+  - name: groups_only_daily
+    description: only_daily durumundaki grup sayısı.
+    data_tests:
+    - not_null
+  - name: groups_only_hourly
+    description: only_hourly durumundaki grup sayısı.
+    data_tests:
+    - not_null
+  - name: hourly_passage
+    description: Yalnız iki taraflı grupların saatlik turnike geçişi toplamı.
+  - name: daily_journey_count
+    description: Yalnız iki taraflı grupların günlük kaynak yolculuk toplamı.
+  - name: daily_journey_estimated
+    description: Yalnız iki taraflı grupların mevcut 2022 kuralıyla tahmin toplamı.
+  - name: has_suspect_journeys
+    description: Günün herhangi bir grubunda true ise true.
+  - name: ratio_to_source
+    description: Saatlik geçiş / günlük kaynak; payda sıfır veya NULL ise NULL.
+  - name: ratio_to_estimate
+    description: Saatlik geçiş / günlük tahmin; payda sıfır veya NULL ise NULL.
+  - name: hourly_month_flag
+    description: Ayın ALL kalite bayrağı; ALL satırı yoksa * satırının bayrağı.
+    data_tests:
+    - not_null
+  - name: status
+    description: İki taraflı grup yoksa no_overlap; aksi halde grup kuralları 3–6.
+    data_tests:
+    - not_null
+    - accepted_values:
+        arguments:
+          values:
+          - no_overlap
+          - hourly_incomplete
+          - match
+          - daily_doubled
+          - mismatch
+- name: fct_station_group_hour_profile
+  description: İstasyon grubu × gün tipi × saat göreli yoğunluk profili. passage_count
+    turnike geçişidir; tekil kişi ya da tren/vagon doluluğu değildir. relative_index
+    grubun en yoğun saatinin yüzde kaçı demektir (0–1). Taban dönem 2023-01-01…2024-07-31;
+    yalnız ALL bayrağı ok olan aylar ve grup toplamı pozitif günler. Eksik saatler
+    0; resmî tatiller ayrılmaz.
+  columns:
+  - name: station_group
+    description: İstasyon grubu.
+    data_tests:
+    - not_null
+  - name: day_type
+    description: 'isodow: Pzt–Cum weekday, Cmt saturday, Paz sunday; tatiller ayrılmaz.'
+    data_tests:
+    - not_null
+    - accepted_values:
+        arguments:
+          values:
+          - weekday
+          - saturday
+          - sunday
+  - name: ride_hour
+    description: 0–23 saat; her grup × gün tipi 24 satır.
+    data_tests:
+    - not_null
+    - accepted_values:
+        arguments:
+          values:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+          - 8
+          - 9
+          - 10
+          - 11
+          - 12
+          - 13
+          - 14
+          - 15
+          - 16
+          - 17
+          - 18
+          - 19
+          - 20
+          - 21
+          - 22
+          - 23
+  - name: typical_passage
+    description: Taban günlerinde sıfırla tamamlanmış saatlik geçişlerin medyanı,
+      DOUBLE.
+    data_tests:
+    - not_null
+  - name: peak_reference
+    description: Grubun tüm gün tipleri ve saatlerindeki en yüksek typical_passage.
+    data_tests:
+    - not_null
+  - name: relative_index
+    description: typical_passage / peak_reference; peak 0 ise NULL. Grubun en yoğun
+      saatinin yüzde kaçı (0–1).
+  - name: band
+    description: Endeks ≤0,33 quiet, ≤0,66 moderate, >0,66 busy; NULL endekste NULL.
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - quiet
+          - moderate
+          - busy
+  - name: baseline_days
+    description: Grup × gün tipindeki pozitif toplamlı taban günü sayısı.
+    data_tests:
+    - not_null
+  - name: baseline_start
+    description: 'Sabit taban başlangıcı: 2023-01-01.'
+    data_tests:
+    - not_null
+  - name: baseline_end
+    description: 'Sabit taban bitişi: 2024-07-31.'
+    data_tests:
+    - not_null
+  data_tests:
+  - accepted_values:
+      name: hour_profile_relative_index_range
+      arguments:
+        column_name: (relative_index between 0 and 1)
+        values:
+        - true
+        quote: false
+      config:
+        where: relative_index is not null
 seeds:
 - name: hourly_line_map
   description: Ham 28 kısa hat kodunun gözden geçirilmiş günlük eşlemesi; 21 hat günlük
