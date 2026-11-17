@@ -1,0 +1,129 @@
+version: 2
+unit_tests:
+  - name: test_hour_profile_reliability_priority_and_boundaries
+    model: mart_station_group_hour_profile
+    given:
+      - input: ref('fct_station_group_hour_profile')
+        rows:
+          - {station_group: few_low, baseline_days: 19, peak_reference: 49}
+          - {station_group: few_high, baseline_days: 19, peak_reference: 50}
+          - {station_group: low, baseline_days: 20, peak_reference: 49}
+          - {station_group: reliable, baseline_days: 20, peak_reference: 50}
+    expect:
+      rows:
+        - {station_group: few_low, reliability: few_days}
+        - {station_group: few_high, reliability: few_days}
+        - {station_group: low, reliability: low_volume}
+        - {station_group: reliable, reliability: ok}
+models:
+- name: mart_station_group_hour_profile
+  description: 'İstasyon grubu × gün tipi × saat için tipik göreli yoğunluk; turnike
+    geçişi; tekil kişi ya da tren doluluğu değil. Taban 2023-01-01…2024-07-31; tatiller
+    ayrılmaz. Satırlar filtrelenmez; reliability: önce baseline_days < 20 few_days,
+    sonra peak_reference < 50 low_volume, aksi ok. ok dışında endeks yorumlanmaz.'
+  columns:
+  - name: station_group
+    description: İstasyon grubu.
+    data_tests:
+    - not_null
+  - name: day_type
+    description: 'isodow: Pzt–Cum weekday, Cmt saturday, Paz sunday; tatiller ayrılmaz.'
+    data_tests:
+    - not_null
+    - accepted_values:
+        arguments:
+          values:
+          - weekday
+          - saturday
+          - sunday
+  - name: ride_hour
+    description: 0–23 saat; her grup × gün tipi 24 satır.
+    data_tests:
+    - not_null
+    - accepted_values:
+        arguments:
+          values:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+          - 8
+          - 9
+          - 10
+          - 11
+          - 12
+          - 13
+          - 14
+          - 15
+          - 16
+          - 17
+          - 18
+          - 19
+          - 20
+          - 21
+          - 22
+          - 23
+  - name: typical_passage
+    description: Median hourly turnstile passages on baseline days, with missing hours
+      filled with zero; baseline 2023-01-01 to 2024-07-31, holidays not separated.
+      Not unique people or train occupancy.
+    data_tests:
+    - not_null
+  - name: peak_reference
+    description: Grubun tüm gün tipleri ve saatlerindeki en yüksek typical_passage.
+    data_tests:
+    - not_null
+  - name: relative_index
+    description: Typical passages divided by the station group peak across all day
+      types and hours (0–1); quiet <= 0.33, moderate <= 0.66, busy > 0.66. Baseline
+      2023-01-01 to 2024-07-31, holidays not separated; turnstile passages, not unique
+      people or train occupancy. Interpret only when reliability is ok.
+  - name: band
+    description: Endeks ≤0,33 quiet, ≤0,66 moderate, >0,66 busy; NULL endekste NULL.
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - quiet
+          - moderate
+          - busy
+  - name: baseline_days
+    description: Grup × gün tipindeki pozitif toplamlı taban günü sayısı.
+    data_tests:
+    - not_null
+  - name: baseline_start
+    description: 'Sabit taban başlangıcı: 2023-01-01.'
+    data_tests:
+    - not_null
+  - name: baseline_end
+    description: 'Sabit taban bitişi: 2024-07-31.'
+    data_tests:
+    - not_null
+  - name: reliability
+    description: 'Öncelik: baseline_days < 20 ise few_days; değilse peak_reference
+      < 50 ise low_volume; aksi ok. ok değilse endeksi yorumlama. Satırlar filtrelenmeden
+      yayımlanır.'
+    data_tests:
+    - not_null
+    - accepted_values:
+        arguments:
+          values:
+          - few_days
+          - low_volume
+          - ok
+  data_tests:
+  - accepted_values:
+      name: mart_hour_profile_relative_index_range
+      arguments:
+        column_name: (relative_index between 0 and 1)
+        values:
+        - true
+        quote: false
+      config:
+        where: relative_index is not null
+  config:
+    alias: fct_station_group_hour_profile

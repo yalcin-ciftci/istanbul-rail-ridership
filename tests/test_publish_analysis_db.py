@@ -125,3 +125,85 @@ def test_defaults_are_relative_to_repository_not_cwd(tmp_path, monkeypatch):
     monkeypatch.chdir(elsewhere)
     assert publisher.main([]) == 0
     assert (tmp_path / "data" / "ulasim_analysis.duckdb").is_file()
+
+
+def test_publish_hour_profile_comments_and_rows(tmp_path, monkeypatch):
+    publisher = load_publisher()
+    source, target = tmp_path / "source.duckdb", tmp_path / "analysis.duckdb"
+    make_source(source)
+    with duckdb.connect(str(source)) as con:
+        con.execute(
+            "CREATE TABLE marts.fct_station_group_hour_profile AS "
+            "SELECT 8 AS ride_hour, 'ok' AS reliability"
+        )
+        con.execute(
+            "COMMENT ON TABLE marts.fct_station_group_hour_profile IS 'Tipik turnike geçişi'"
+        )
+        con.execute(
+            "COMMENT ON COLUMN marts.fct_station_group_hour_profile.reliability "
+            "IS 'Grubun güvenilirliği; few_days önce gelir.'"
+        )
+    assert publisher.publish(source, target) == 4
+    with duckdb.connect(str(target), read_only=True) as con:
+        assert con.execute(
+            "SELECT ride_hour, reliability FROM marts.fct_station_group_hour_profile"
+        ).fetchall() == [(8, "ok")]
+        assert con.execute(
+            "SELECT comment FROM duckdb_tables() WHERE table_name = ?",
+            ["fct_station_group_hour_profile"],
+        ).fetchone() == ("Tipik turnike geçişi",)
+        assert con.execute(
+            "SELECT comment FROM duckdb_columns() WHERE table_name = ? AND column_name = ?",
+            ["fct_station_group_hour_profile", "reliability"],
+        ).fetchone() == ("Grubun güvenilirliği; few_days önce gelir.",)
+    from test_ulasim_mcp import load_server
+
+    monkeypatch.setenv("ULASIM_DB", str(target))
+    schema = load_server().sema()
+    profile = next(
+        table
+        for table in schema["tablolar"]
+        if table["tablo"] == "marts.fct_station_group_hour_profile"
+    )
+    assert profile["aciklama"] == "Tipik turnike geçişi"
+    assert (
+        profile["kolonlar"][1]["aciklama"]
+        == "Grubun güvenilirliği; few_days önce gelir."
+    )
+    assert any("reliability ok değilse" in warning for warning in schema["uyarilar"])
+
+
+def test_catalog_comments_are_literal_and_uncommented_objects_stay_null(tmp_path):
+    publisher = load_publisher()
+    source, target = tmp_path / "source.duckdb", tmp_path / "analysis.duckdb"
+    make_source(source)
+    comment = 'İBB\'nin "yorumu"; DROP TABLE marts.empty; --'
+    with duckdb.connect(str(source)) as con:
+        con.execute('CREATE TABLE marts."t"";--" ("c"";--" INTEGER)')
+        # Fixture literal is independent of the production escaping helper.
+        con.execute(
+            """COMMENT ON TABLE marts."t"";--" IS 'İBB''nin "yorumu"; DROP TABLE marts.empty; --' """
+        )
+        con.execute(
+            """COMMENT ON COLUMN marts."t"";--"."c"";--" IS 'İBB''nin "yorumu"; DROP TABLE marts.empty; --' """
+        )
+    assert publisher.publish(source, target) == 4
+    with duckdb.connect(str(target), read_only=True) as con:
+        assert con.execute(
+            "SELECT comment FROM duckdb_tables() WHERE table_name = ?", ['t";--']
+        ).fetchone() == (comment,)
+        assert con.execute(
+            "SELECT comment FROM duckdb_columns() WHERE table_name = ?", ['t";--']
+        ).fetchone() == (comment,)
+        assert con.execute("SELECT count(*) FROM marts.empty").fetchone() == (0,)
+        assert con.execute(
+            "SELECT comment FROM duckdb_tables() WHERE table_name = ?", ["empty"]
+        ).fetchone() == (None,)
+        assert con.execute(
+            "SELECT comment FROM duckdb_columns() WHERE table_name = ?", ["empty"]
+        ).fetchone() == (None,)
+
+
+def test_comment_literal_rejects_nul():
+    with pytest.raises(ValueError, match="NUL"):
+        load_publisher()._comment_literal("invalid\x00comment")

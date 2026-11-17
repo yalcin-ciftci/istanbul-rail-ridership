@@ -55,7 +55,7 @@ Milestones and specs: `docs/` (e.g. `docs/M0.md`). Design rationale: README.
 ## Style
 - Small, readable functions; type hints on public functions; standard library first.
 - Clear error messages that say what failed and where; exit code 1 on failure.
-- SQL: explicit column lists, parameters with `?` (no string-built values).
+- SQL: explicit column lists, parameters with `?` (no string-built values). Single exception: `COMMENT ON` in `tools/publish_analysis_db.py`, which DuckDB cannot parameterize; its values come only from the source database catalog and pass through one escaping helper that is unit-tested.
 - No emojis in code, logs or docs.
 
 ## Third-party skills

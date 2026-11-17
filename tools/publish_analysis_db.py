@@ -14,6 +14,13 @@ def _identifier(name: str) -> str:
     return '"' + name.replace('"', '""') + '"'
 
 
+def _comment_literal(value: str) -> str:
+    # SQL literal: COMMENT ON parametre almaz; değerler katalogdan
+    if "\x00" in value:
+        raise ValueError("Catalog comment contains NUL")
+    return "'" + value.replace("'", "''") + "'"
+
+
 def publish(source: Path, target: Path) -> int:
     """Copy and verify marts in a temporary database, then replace the target."""
     temporary = Path(str(target) + ".tmp")
@@ -39,6 +46,18 @@ def publish(source: Path, target: Path) -> int:
                     f"No marts tables or views in source database: {source}"
                 )
             con.execute("CREATE SCHEMA marts")
+            comments = con.execute(
+                "SELECT table_name, comment FROM duckdb_tables() "
+                "WHERE database_name = ? AND schema_name = ? "
+                "UNION ALL SELECT view_name, comment FROM duckdb_views() "
+                "WHERE database_name = ? AND schema_name = ?",
+                ["src", "marts", "src", "marts"],
+            ).fetchall()
+            column_comments = con.execute(
+                "SELECT table_name, column_name, comment FROM duckdb_columns() "
+                "WHERE database_name = ? AND schema_name = ? AND comment IS NOT NULL",
+                ["src", "marts"],
+            ).fetchall()
             for (name,) in objects:
                 identifier = _identifier(name)
                 con.execute(
@@ -56,6 +75,17 @@ def publish(source: Path, target: Path) -> int:
                         f"source={source_count} target={target_count}"
                     )
                 print(f"table=marts.{name} rows={target_count}")
+            for name, comment in comments:
+                if comment is not None:
+                    con.execute(
+                        f"COMMENT ON TABLE marts.{_identifier(name)} "
+                        f"IS {_comment_literal(comment)}"
+                    )
+            for name, column, comment in column_comments:
+                con.execute(
+                    f"COMMENT ON COLUMN marts.{_identifier(name)}.{_identifier(column)} "
+                    f"IS {_comment_literal(comment)}"
+                )
             con.execute("DETACH src")
             con.execute("CHECKPOINT")
         os.replace(temporary, target)

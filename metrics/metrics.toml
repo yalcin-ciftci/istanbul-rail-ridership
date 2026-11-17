@@ -63,3 +63,37 @@ text_tr = "Kaynak: İBB Açık Veri, İBB Açık Veri Lisansı (CC BY 4.0); kayn
 [[rule]]
 id = "data_version"
 text_tr = "Sayı verdiğin cevabın sonunda kullandığın veri sürümünü yaz (sorgu sonucundaki veri_surumu kimliği). Kimlik boşsa bunu söyle; aynı soru aynı kimlikte aynı sonucu vermelidir."
+
+[[metric]]
+id = "typical_hourly_passage"
+role = "analysis"
+label_tr = "Tipik saatlik turnike geçişi"
+definition_tr = "Taban dönemde o gün tipi ve saatte tipik (medyan) turnike geçişi."
+description_en = "Median hourly turnstile passages on baseline days, with missing hours filled with zero; baseline 2023-01-01 to 2024-07-31, holidays not separated. Not unique people or train occupancy."
+column = "typical_passage"
+tables = ["fct_station_group_hour_profile"]
+
+[[metric]]
+id = "relative_hourly_intensity"
+role = "interpretation"
+label_tr = "Göreli saatlik yoğunluk"
+definition_tr = "Grubun en yoğun tipik saatinin yüzde kaçı: relative_index × 100; quiet ≤0,33, moderate ≤0,66, busy >0,66."
+description_en = "Typical passages divided by the station group peak across all day types and hours (0–1); quiet <= 0.33, moderate <= 0.66, busy > 0.66. Baseline 2023-01-01 to 2024-07-31, holidays not separated; turnstile passages, not unique people or train occupancy. Interpret only when reliability is ok."
+column = "relative_index"
+tables = ["fct_station_group_hour_profile"]
+
+[[rule]]
+id = "hourly_typical"
+text_tr = "Saatlik profil tipik bir günü anlatır; belirli bir tarih ve saatin geçiş sayısı değildir. Tipik saatlik geçiş için typical_passage ölçüsünü kullan; medyan olduğunu belirt."
+
+[[rule]]
+id = "hourly_reliability"
+text_tr = "reliability ok değilse bayrağı söyle ve endeksi yorumlama: few_days, baseline_days < 20; low_volume, peak_reference < 50; aksi ok. Öncelik few_days → low_volume → ok; satırlar filtrelenmez."
+
+[[rule]]
+id = "hourly_scope"
+text_tr = "Saatlik profil tabanı 2023-01-01…2024-07-31 dönemidir; resmî tatiller ayrılmaz. Saatlik ham veri 2020-01…2024-10 dönemini kapsar."
+
+[[rule]]
+id = "hourly_relative"
+text_tr = "Yoğunluğu en yoğun saatin %X'i diye anlat: relative_index × 100; quiet ≤0,33, moderate ≤0,66, busy >0,66. Ölçü turnike geçişidir; tekil kişi ya da tren doluluğu değildir. Saatlik profil cevabında sorgu sonucundaki saatlik_veri_surumu kimliğini de yaz; boşsa bunu söyle."

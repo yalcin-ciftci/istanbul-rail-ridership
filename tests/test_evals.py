@@ -575,7 +575,8 @@ def test_percentage_decimal_precision(answer, want):
 
 def test_new_cases_reference_sql_in_memory():
     cases = implementation("run_eval").load_cases(ROOT / "evals/cases.toml")
-    new = {case["id"]: case for case in cases[10:]}
+    # These four earlier cases share this fixture; hourly has its own fixture.
+    new = {case["id"]: case for case in cases[10:14]}
     assert list(new) == [
         "station_not_found",
         "ambiguous_station_yenimahalle",

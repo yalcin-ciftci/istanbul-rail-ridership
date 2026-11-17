@@ -23,7 +23,7 @@ def test_contract_schema():
     data = contract()
     assert type(data["version"]) is int
     assert data["version"] == 2
-    assert data["rule"][-1] == {
+    assert next(rule for rule in data["rule"] if rule["id"] == "data_version") == {
         "id": "data_version",
         "text_tr": "Sayı verdiğin cevabın sonunda kullandığın veri sürümünü yaz (sorgu sonucundaki veri_surumu kimliği). Kimlik boşsa bunu söyle; aynı soru aynı kimlikte aynı sonucu vermelidir.",
     }
@@ -37,7 +37,13 @@ def test_contract_schema():
     assert roles["journey_count"] == "source"
     assert roles["passenger_count"] == "restricted"
     for metric in data["metric"]:
-        assert metric["role"] in {"default", "source", "restricted"}
+        assert metric["role"] in {
+            "default",
+            "source",
+            "restricted",
+            "analysis",
+            "interpretation",
+        }
         for field in ("label_tr", "definition_tr", "description_en"):
             assert isinstance(metric[field], str) and metric[field].strip()
         assert metric["tables"] and all(metric["tables"])
@@ -58,7 +64,7 @@ def test_contract_schema():
 
 def test_marts_descriptions_and_sql_match_contract():
     models = {}
-    for filename in ("_marts.yml", "_station_groups.yml"):
+    for filename in ("_marts.yml", "_station_groups.yml", "_hour_profile.yml"):
         document = yaml.safe_load(
             (ROOT / "transform" / "models" / "marts" / filename).read_text(
                 encoding="utf-8"
@@ -66,18 +72,23 @@ def test_marts_descriptions_and_sql_match_contract():
         )
         for model in document["models"]:
             assert model["name"] not in models
-            models[model["name"]] = {
+            models[model.get("config", {}).get("alias", model["name"])] = {
                 col["name"]: col.get("description") for col in model["columns"]
             }
     for metric in contract()["metric"]:
-        actual_tables = {name for name, cols in models.items() if metric["id"] in cols}
+        column = metric.get("column", metric["id"])
+        actual_tables = {name for name, cols in models.items() if column in cols}
         assert actual_tables == set(metric["tables"])
         for table in metric["tables"]:
-            assert models[table][metric["id"]] == metric["description_en"]
-            sql = (ROOT / "transform" / "models" / "marts" / f"{table}.sql").read_text(
-                encoding="utf-8"
-            )
-            assert f"as {metric['id']}" in sql
+            assert models[table][column] == metric["description_en"]
+            sql = (
+                ROOT
+                / "transform"
+                / "models"
+                / "marts"
+                / f"{'mart_station_group_hour_profile' if table == 'fct_station_group_hour_profile' else table}.sql"
+            ).read_text(encoding="utf-8")
+            assert column in sql
 
 
 def test_agent_cli_check_from_other_directory(tmp_path):
@@ -110,3 +121,24 @@ def test_agent_stale_block_check_and_render(tmp_path, monkeypatch):
     assert renderer.main([]) == 0
     assert path.read_text(encoding="utf-8") == original
     assert renderer.main(["--check"]) == 0
+
+
+def test_hourly_contract_and_generated_rules():
+    data = contract()
+    metrics = {m["id"]: m for m in data["metric"]}
+    assert metrics["typical_hourly_passage"]["role"] == "analysis"
+    assert metrics["relative_hourly_intensity"]["role"] == "interpretation"
+    rules = {r["id"]: r["text_tr"] for r in data["rule"]}
+    assert {
+        "hourly_typical",
+        "hourly_reliability",
+        "hourly_scope",
+        "hourly_relative",
+    } <= rules.keys()
+    block = (
+        AGENT.read_text("utf-8")
+        .split("<!-- metrics:begin -->")[1]
+        .split("<!-- metrics:end -->")[0]
+    )
+    for text in rules.values():
+        assert text in block

@@ -208,7 +208,7 @@ refusal = false
 
 [[case]]
 id = "hourly_out_of_scope"
-question_tr = "Yenikapı'da hafta içi sabah 8'de kaç kişi turnikeden geçiyor?"
+question_tr = "2024-05-15 sabah 8'de Yenikapı'da kaç kişi turnikeden geçti?"
 reference_sql = """
 SELECT min(ride_date) AS min_date, max(ride_date) AS max_date
 FROM marts.fct_station_daily
@@ -240,4 +240,22 @@ signed_by_words = true
 must_mention = ["(?i)yüzde|%"]
 must_not_mention = []
 rules = ["default_metric"]
+refusal = false
+
+[[case]]
+id = "hourly_profile_yenikapi"
+question_tr = "Yenikapı'da hafta içi en yoğun saat hangisi ve sabah 8'deki yoğunluk o saatin yüzde kaçı?"
+reference_sql = """
+WITH profile AS (
+    SELECT ride_hour, typical_passage, relative_index
+    FROM marts.fct_station_group_hour_profile
+    WHERE station_group = 'Yenikapı' AND day_type = 'weekday'
+)
+SELECT (SELECT ride_hour FROM profile ORDER BY typical_passage DESC, ride_hour LIMIT 1) AS peak_hour,
+       (SELECT relative_index * 100 FROM profile WHERE ride_hour = 8) AS intensity_percentage
+"""
+numbers = ["peak_hour", "intensity_percentage"]
+must_mention = ["(?i)tipik|medyan|turnike"]
+must_not_mention = []
+rules = ["hourly_typical", "hourly_reliability", "hourly_scope", "hourly_relative"]
 refusal = false

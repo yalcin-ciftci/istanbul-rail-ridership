@@ -1,6 +1,6 @@
 {
   "veri_surumu": "ae5b065db736",
-  "olusturma": "2026-11-17T23:21:30.569932+00:00",
+  "olusturma": "2026-11-17T23:52:03.932670+00:00",
   "cases": {
     "busiest_stations_2025": {
       "columns": [
@@ -229,6 +229,18 @@
       "rows": [
         [
           -5.514670632430195
+        ]
+      ]
+    },
+    "hourly_profile_yenikapi": {
+      "columns": [
+        "peak_hour",
+        "intensity_percentage"
+      ],
+      "rows": [
+        [
+          18,
+          76.13650363434766
         ]
       ]
     }

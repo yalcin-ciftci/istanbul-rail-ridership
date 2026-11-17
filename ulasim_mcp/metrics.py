@@ -32,7 +32,13 @@ def load_contract() -> dict[str, Any]:
                     raise ValueError(f"duplicate {kind} id: {entry['id']}")
                 seen.add(entry["id"])
         for metric in contract["metric"]:
-            if metric["role"] not in {"default", "source", "restricted"}:
+            if metric["role"] not in {
+                "default",
+                "source",
+                "restricted",
+                "analysis",
+                "interpretation",
+            }:
                 raise ValueError("invalid metric role")
             tables = metric["tables"]
             if (

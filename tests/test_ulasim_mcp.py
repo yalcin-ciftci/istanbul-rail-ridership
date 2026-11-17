@@ -123,6 +123,8 @@ def test_data_version_formula_and_hourly_exclusion(db):
         "kimlik": expected,
         "kaynak_sayisi": 2,
         "kaynak_hash_eksik": 1,
+        "saatlik_kimlik": None,
+        "saatlik_kaynak_sayisi": None,
     }
     assert datetime.fromisoformat(version["son_alim"]) == datetime.fromisoformat(
         "2026-11-16T10:00:00+00:00"
@@ -133,7 +135,11 @@ def test_data_version_formula_and_hourly_exclusion(db):
             "INSERT INTO marts.dim_source_version VALUES ('rail_hourly', 'hour', '2024-01', ?, ?, now())",
             ["d" * 64, "e" * 64],
         )
-    assert module.sema()["veri_surumu"] == version
+    assert {
+        k: v
+        for k, v in module.sema()["veri_surumu"].items()
+        if not k.startswith("saatlik_")
+    } == {k: v for k, v in version.items() if not k.startswith("saatlik_")}
     assert module.sorgu("SELECT 1")["veri_surumu"] == expected
 
 

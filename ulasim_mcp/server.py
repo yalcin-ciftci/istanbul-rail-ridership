@@ -123,6 +123,14 @@ def _json_value(value: Any) -> Any:
     return str(value)
 
 
+def _version_identity(rows: list[tuple]) -> str:
+    keys = sorted(
+        f"{resource}|{month or ''}|{source or 'stored:' + stored}"
+        for resource, month, source, stored, _ in rows
+    )
+    return hashlib.sha256("\n".join(keys).encode("utf-8")).hexdigest()[:12]
+
+
 def _data_version(con: duckdb.DuckDBPyConnection) -> dict[str, Any] | None:
     exists = con.execute(
         "SELECT count(*) FROM information_schema.tables "
@@ -131,8 +139,6 @@ def _data_version(con: duckdb.DuckDBPyConnection) -> dict[str, Any] | None:
     ).fetchone()[0]
     if not exists:
         return None
-    # MCP's analytical marts currently use only the daily dataset. Include hourly
-    # sources when hourly marts become available to these answers.
     rows = con.execute(
         "SELECT resource_id, source_month, source_sha256, stored_sha256, ingested_at "
         "FROM marts.dim_source_version WHERE dataset = ?",
@@ -140,15 +146,18 @@ def _data_version(con: duckdb.DuckDBPyConnection) -> dict[str, Any] | None:
     ).fetchall()
     if not rows:
         return None
-    keys = sorted(
-        f"{resource}|{month or ''}|{source or 'stored:' + stored}"
-        for resource, month, source, stored, _ in rows
-    )
+    hourly_rows = con.execute(
+        "SELECT resource_id, source_month, source_sha256, stored_sha256, ingested_at "
+        "FROM marts.dim_source_version WHERE dataset = ?",
+        ["rail_hourly"],
+    ).fetchall()
     return {
-        "kimlik": hashlib.sha256("\n".join(keys).encode("utf-8")).hexdigest()[:12],
+        "kimlik": _version_identity(rows),
         "kaynak_sayisi": len(rows),
         "kaynak_hash_eksik": sum(row[2] is None for row in rows),
         "son_alim": _json_value(max(row[4] for row in rows)),
+        "saatlik_kimlik": _version_identity(hourly_rows) if hourly_rows else None,
+        "saatlik_kaynak_sayisi": len(hourly_rows) if hourly_rows else None,
     }
 
 
@@ -313,6 +322,10 @@ def sorgu(sql: str, satir_siniri: int = 200) -> dict[str, Any]:
             "sure_ms": round((time.perf_counter() - started) * 1000, 3),
             "kesilme_nedeni": reason,
         }
+        if "fct_station_group_hour_profile" in sql.lower():
+            result["saatlik_veri_surumu"] = (
+                version["saatlik_kimlik"] if version is not None else None
+            )
         if reason == "karakter_siniri":
             result["not"] = YANIT_BOYUTU_IPUCU
         return result

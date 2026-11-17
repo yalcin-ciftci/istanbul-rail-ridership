@@ -33,7 +33,7 @@ flowchart LR
     MCP --> Agent["Claude Code sub-agent"]
 ```
 
-DuckDB keeps the raw data and analytical models in a local database file. dbt separates source preservation, cleaning, quality flags and aggregation, with unit tests and reconciliation checks. A publisher materializes only marts tables and views into a separate analysis database for MCP. Model descriptions remain in the YAML and source database comments; the materialized copy does not preserve those comments. The MCP `sema` tool exposes columns, coverage and built-in caveats. MCP gives the agent a small interface for discovering tables, resolving station names and running bounded read-only queries. Ingest uses the CKAN datastore API rather than the CSV download because it returns UTF-8 JSON with a total row count; the script checks fetched and loaded counts against that total and replaces each resource's rows transactionally on reruns.
+DuckDB keeps the raw data and analytical models in a local database file. dbt separates source preservation, cleaning, quality flags and aggregation, with unit tests and reconciliation checks. A publisher materializes only marts tables and views into a separate analysis database for MCP. The publisher preserves table and column descriptions from the source catalog in the analysis copy. The MCP `sema` tool exposes columns, coverage and built-in caveats. MCP gives the agent a small interface for discovering tables, resolving station names and running bounded read-only queries. Ingest uses the CKAN datastore API rather than the CSV download because it returns UTF-8 JSON with a total row count; the script checks fetched and loaded counts against that total and replaces each resource's rows transactionally on reruns.
 
 ## Data model
 
@@ -149,11 +149,15 @@ while downloading and separately hash the retained Parquet. The current versions
 are copied through `marts.dim_source_version` into the published analysis database.
 
 MCP `sema` reports `veri_surumu` metadata and successful `sorgu` responses include
-its 12-character identity. Only daily resources contribute while the analytical
-marts use daily data. The identity is the first 12 hexadecimal characters of
+its 12-character daily identity, which remains unchanged by hourly sources.
+The identity is the first 12 hexadecimal characters of
 SHA-256 over sorted `resource_id|source_month|source_sha256` lines joined with
 `\n` (empty month for daily sources). Missing source hashes use
 `stored:<stored_sha256>` instead. Answers containing numbers must cite this identity.
+
+`marts.fct_station_group_hour_profile` exposes typical hourly turnstile passages, not counts for a specific date or train occupancy; interpret its relative index only when `reliability = ok`.
+`sema.veri_surumu` adds `saatlik_kimlik` and `saatlik_kaynak_sayisi`, using the same hash method for `rail_hourly` (both null without hourly sources).
+Queries mentioning `fct_station_group_hour_profile` also return `saatlik_veri_surumu`; all other successful query fields and the daily golden identity remain unchanged.
 
 For existing local data, run `uv run python tools/backfill_source_versions.py`
 before `dbt build` and publication. Backfill preserves known source hashes and
