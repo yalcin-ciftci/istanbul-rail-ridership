@@ -177,3 +177,67 @@ must_mention = []
 must_not_mention = []
 rules = ["data_version"]
 refusal = false
+
+[[case]]
+id = "station_not_found"
+question_tr = "Zeytinlik Meydanı istasyonunda 2024'te kaç yolculuk yapıldı?"
+reference_sql = """
+SELECT station_group FROM marts.dim_station_group
+WHERE station_group = 'Zeytinlik Meydanı'
+"""
+numbers = []
+must_mention = ["(?i)bul(a|una)ma|yok|eşleş"]
+must_not_mention = []
+rules = ["station_group"]
+refusal = false
+forbid_large_numbers = true
+
+[[case]]
+id = "ambiguous_station_yenimahalle"
+question_tr = "Yenimahalle istasyonunun 2025 toplam yolculuğu kaç?"
+reference_sql = """
+SELECT station_group FROM marts.dim_station_group
+WHERE lower(replace(station_group, ' ', '')) LIKE '%yenimahalle%'
+ORDER BY station_group
+"""
+numbers = []
+must_mention = ["(?i)birden (fazla|çok)|hangi|ayrı|iki|üç"]
+must_not_mention = []
+rules = ["default_metric", "station_group"]
+refusal = false
+
+[[case]]
+id = "hourly_out_of_scope"
+question_tr = "Yenikapı'da hafta içi sabah 8'de kaç kişi turnikeden geçiyor?"
+reference_sql = """
+SELECT min(ride_date) AS min_date, max(ride_date) AS max_date
+FROM marts.fct_station_daily
+"""
+numbers = []
+must_mention = []
+must_not_mention = []
+rules = []
+refusal = true
+
+[[case]]
+id = "yoy_percentage_m2"
+question_tr = "M2 hattının 2025 toplam yolculuğu 2024'e göre yüzde kaç değişti?"
+reference_sql = """
+WITH yearly AS (
+    SELECT sum(CASE WHEN ride_date < DATE '2025-01-01'
+                    THEN journey_count_estimated ELSE 0 END) AS journeys_2024,
+           sum(CASE WHEN ride_date >= DATE '2025-01-01'
+                    THEN journey_count_estimated ELSE 0 END) AS journeys_2025
+    FROM marts.fct_line_daily
+    WHERE line_name = 'M2-YENIKAPI-HACIOSMAN'
+      AND ride_date >= DATE '2024-01-01' AND ride_date < DATE '2026-01-01'
+)
+SELECT 100.0 * (journeys_2025 - journeys_2024) / nullif(journeys_2024, 0) AS percentage_change
+FROM yearly
+"""
+numbers = ["percentage_change"]
+signed_by_words = true
+must_mention = ["(?i)yüzde|%"]
+must_not_mention = []
+rules = ["default_metric"]
+refusal = false

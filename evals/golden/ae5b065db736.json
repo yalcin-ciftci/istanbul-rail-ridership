@@ -1,6 +1,6 @@
 {
   "veri_surumu": "ae5b065db736",
-  "olusturma": "2026-11-17T22:34:57.280624+00:00",
+  "olusturma": "2026-11-17T23:21:30.569932+00:00",
   "cases": {
     "busiest_stations_2025": {
       "columns": [
@@ -185,6 +185,50 @@
       "rows": [
         [
           1130483390
+        ]
+      ]
+    },
+    "station_not_found": {
+      "columns": [
+        "station_group"
+      ],
+      "rows": []
+    },
+    "ambiguous_station_yenimahalle": {
+      "columns": [
+        "station_group"
+      ],
+      "rows": [
+        [
+          "Yeni Mahalle"
+        ],
+        [
+          "Yenimahalle"
+        ],
+        [
+          "Yenimahalle (Marmaray)"
+        ]
+      ]
+    },
+    "hourly_out_of_scope": {
+      "columns": [
+        "min_date",
+        "max_date"
+      ],
+      "rows": [
+        [
+          "2021-01-01",
+          "2025-12-31"
+        ]
+      ]
+    },
+    "yoy_percentage_m2": {
+      "columns": [
+        "percentage_change"
+      ],
+      "rows": [
+        [
+          -5.514670632430195
         ]
       ]
     }

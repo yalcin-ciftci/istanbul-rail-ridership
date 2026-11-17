@@ -19,7 +19,7 @@ GOLDEN_DIR = ROOT / "evals/golden"
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from evals.scoring import score_answer
+from evals.scoring import pass_hat_k, score_answer
 
 
 def repo_path(value: str | Path) -> Path:
@@ -89,8 +89,9 @@ def load_cases(path: Path) -> list[dict]:
                 isinstance(x, str) for x in case[field]
             ):
                 raise ValueError(f"Geçersiz alan: {case_id}.{field}")
-        if not isinstance(case["refusal"], bool):
-            raise TypeError(f"Geçersiz refusal: {case_id}")
+        for field in ("refusal", "forbid_large_numbers", "signed_by_words"):
+            if field in case and not isinstance(case[field], bool):
+                raise TypeError(f"Geçersiz {field}: {case_id}")
         if "number_rows" in case and (
             type(case["number_rows"]) is not int or case["number_rows"] < 1
         ):
@@ -161,8 +162,35 @@ def golden(cases: list[dict], db: Path) -> int:
     return 0
 
 
-def score(cases: list[dict], answers: Path, golden_file: Path | None) -> int:
+def select_cases(cases: list[dict], only: str | None) -> list[dict]:
+    """Filter case IDs while retaining their declared order."""
+    selected = (
+        set(only.split(",")) if only is not None else {case["id"] for case in cases}
+    )
+    unknown = selected - {case["id"] for case in cases}
+    if unknown:
+        raise ValueError(f"Bilinmeyen vaka: {', '.join(sorted(unknown))}")
+    return [case for case in cases if case["id"] in selected]
+
+
+def _answer_checks(case: dict, path: Path, reference: dict) -> list[dict]:
+    if not path.exists():
+        return [{"check": "answer", "ok": False, "detail": "cevap yok"}]
+    if case["id"] not in reference["cases"]:
+        return [{"check": "reference", "ok": False, "detail": "golden içinde vaka yok"}]
+    return score_answer(
+        case,
+        path.read_text("utf-8"),
+        reference["cases"][case["id"]],
+        reference["veri_surumu"],
+    )
+
+
+def score(
+    cases: list[dict], answers: Path, golden_file: Path | None, only: str | None = None
+) -> int:
     """Write machine-readable and human-readable results, including missing answers."""
+    cases = select_cases(cases, only)
     if golden_file is None:
         files = list(GOLDEN_DIR.glob("*.json"))
         if not files:
@@ -170,26 +198,50 @@ def score(cases: list[dict], answers: Path, golden_file: Path | None) -> int:
         golden_file = max(files, key=lambda p: (p.stat().st_mtime_ns, p.name))
     reference = json.loads(golden_file.read_text("utf-8"))
     results = {}
+    repeated_paths = {
+        case["id"]: sorted(
+            (
+                p
+                for p in answers.glob(f"{case['id']}__r*.md")
+                if re.fullmatch(rf"{case['id']}__r[1-9]\d*\.md", p.name)
+            ),
+            key=lambda p: int(p.stem.rsplit("__r", 1)[1]),
+        )
+        for case in cases
+    }
+    repeated = any(repeated_paths.values())
     for case in cases:
         case_id = case["id"]
-        path = answers / f"{case_id}.md"
-        if not path.exists():
-            checks = [{"check": "answer", "ok": False, "detail": "cevap yok"}]
-        elif case_id not in reference["cases"]:
-            checks = [
-                {"check": "reference", "ok": False, "detail": "golden içinde vaka yok"}
-            ]
-        else:
-            checks = score_answer(
-                case,
-                path.read_text("utf-8"),
-                reference["cases"][case_id],
-                reference["veri_surumu"],
+        paths = repeated_paths[case_id] or [answers / f"{case_id}.md"]
+        run_results = []
+        for path in paths:
+            checks = _answer_checks(case, path, reference)
+            run_results.append(
+                {
+                    "file": path.name,
+                    "ok": all(c["ok"] for c in checks),
+                    "checks": checks,
+                }
             )
+        checks = [
+            {**check, **({"run": run["file"]} if repeated else {})}
+            for run in run_results
+            for check in run["checks"]
+        ]
         results[case_id] = {
-            "ok": all(check["ok"] for check in checks),
+            "ok": all(run["ok"] for run in run_results),
             "checks": checks,
         }
+        if repeated:
+            n = len(run_results)
+            c = sum(run["ok"] for run in run_results)
+            results[case_id].update(
+                runs=n,
+                passes=c,
+                pass_rate=c / n,
+                pass_hat_k=pass_hat_k(c, n, n),
+                run_results=run_results,
+            )
     passed = sum(result["ok"] for result in results.values())
     report = {
         "veri_surumu": reference["veri_surumu"],
@@ -197,6 +249,11 @@ def score(cases: list[dict], answers: Path, golden_file: Path | None) -> int:
         "total": len(cases),
         "cases": results,
     }
+    if repeated:
+        report.update(
+            mean_pass_at_1=sum(r["pass_rate"] for r in results.values()) / len(cases),
+            mean_pass_hat_k=sum(r["pass_hat_k"] for r in results.values()) / len(cases),
+        )
     answers.mkdir(parents=True, exist_ok=True)
     _write_json(answers / "score.json", report)
     lines = [
@@ -204,13 +261,35 @@ def score(cases: list[dict], answers: Path, golden_file: Path | None) -> int:
         f"Veri sürümü: {reference['veri_surumu']}",
         "",
     ]
+    if repeated:
+        lines.extend(
+            [
+                f"Ortalama pass@1: {report['mean_pass_at_1']:.6f}",
+                f"Ortalama Pass^k: {report['mean_pass_hat_k']:.6f}",
+                "",
+                "| Vaka | Sonuç | c/n |",
+                "| --- | --- | --- |",
+            ]
+        )
+        for case_id, result in results.items():
+            lines.append(
+                f"| {case_id} | {'geçti' if result['ok'] else 'kaldı'} | "
+                f"{result['passes']}/{result['runs']} |"
+            )
+        lines.append("")
     for case_id, result in results.items():
         lines.append(f"- {case_id}: {'geçti' if result['ok'] else 'kaldı'}")
         for check in result["checks"]:
             if not check["ok"]:
-                lines.append(f"  - {check['check']}: {check['detail']}")
+                run_label = f" [{check['run']}]" if repeated else ""
+                lines.append(f"  - {check['check']}{run_label}: {check['detail']}")
     (answers / "score.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"passed={passed}/{len(cases)}")
+    if repeated:
+        print(
+            f"mean_pass_at_1={report['mean_pass_at_1']:.6f} "
+            f"mean_pass_hat_k={report['mean_pass_hat_k']:.6f}"
+        )
     return 0 if passed == len(cases) else 2
 
 
@@ -282,38 +361,48 @@ def ask(
     agent: str,
     only: str | None,
     workdir: Path | None = None,
+    repeat: int = 1,
 ) -> int:
     """Collect answers; record per-case process failures and continue."""
-    selected = set(only.split(",")) if only else {case["id"] for case in cases}
-    unknown = selected - {case["id"] for case in cases}
-    if unknown:
-        raise ValueError(f"Bilinmeyen vaka: {', '.join(sorted(unknown))}")
+    cases = select_cases(cases, only)
+    if repeat < 1:
+        raise ValueError("repeat en az 1 olmalı")
     answers.mkdir(parents=True, exist_ok=True)
     extra = prepare_workdir(workdir) if workdir is not None else None
     for case in cases:
-        if case["id"] not in selected:
-            continue
-        command = agent_command(agent, case["question_tr"], extra)
-        try:
-            result = subprocess.run(
-                command,
-                cwd=workdir,
-                stdin=subprocess.DEVNULL,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                timeout=300,
-                check=False,
-            )
-            answer = (
-                result.stdout
-                if result.returncode == 0
-                else f"ERROR: exit={result.returncode}: {result.stderr}"
-            )
-        except (OSError, subprocess.SubprocessError) as exc:
-            answer = f"ERROR: {exc}"
-        (answers / f"{case['id']}.md").write_text(answer, encoding="utf-8")
+        for run in range(1, repeat + 1):
+            suffix = "" if repeat == 1 else f"__r{run}"
+            _ask_once(case, answers / f"{case['id']}{suffix}.md", agent, extra, workdir)
     return 0
+
+
+def _ask_once(
+    case: dict,
+    destination: Path,
+    agent: str,
+    extra: list[str] | None,
+    workdir: Path | None,
+) -> None:
+    command = agent_command(agent, case["question_tr"], extra)
+    try:
+        result = subprocess.run(
+            command,
+            cwd=workdir,
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=300,
+            check=False,
+        )
+        answer = (
+            result.stdout
+            if result.returncode == 0
+            else f"ERROR: exit={result.returncode}: {result.stderr}"
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        answer = f"ERROR: {exc}"
+    destination.write_text(answer, encoding="utf-8")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -329,9 +418,11 @@ def main(argv: list[str] | None = None) -> int:
             sub.add_argument("--answers", required=True)
         if name == "score":
             sub.add_argument("--golden")
+            sub.add_argument("--only")
         if name == "ask":
             sub.add_argument("--agent", default="ulasim")
             sub.add_argument("--only")
+            sub.add_argument("--repeat", type=int, default=1)
             sub.add_argument(
                 "--workdir",
                 help="isolated directory outside any Claude project; loads only "
@@ -347,6 +438,7 @@ def main(argv: list[str] | None = None) -> int:
                 cases,
                 repo_path(args.answers),
                 repo_path(args.golden) if args.golden else None,
+                args.only,
             )
         return ask(
             cases,
@@ -354,6 +446,7 @@ def main(argv: list[str] | None = None) -> int:
             args.agent,
             args.only,
             Path(args.workdir).resolve() if args.workdir else None,
+            args.repeat,
         )
     except (OSError, ValueError, KeyError, TypeError, duckdb.Error) as exc:
         print(f"Error: {exc}", file=sys.stderr)

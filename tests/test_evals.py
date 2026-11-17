@@ -412,3 +412,383 @@ def test_ask_without_workdir_keeps_current_directory(fixture_eval, monkeypatch):
     assert runner.main(args) == 0
     assert calls[0][1]["cwd"] is None
     assert "--strict-mcp-config" not in calls[0][0]
+
+
+@pytest.mark.parametrize("repeat", [1, 3])
+def test_ask_repeat_filenames_and_sequential_answers(fixture_eval, monkeypatch, repeat):
+    runner = implementation("run_eval")
+    _, cases, _, answers = fixture_eval
+    calls = []
+
+    def fake_run(args, **kwargs):
+        calls.append(args[-1])
+        return subprocess.CompletedProcess(args, 0, f"answer {len(calls)}", "")
+
+    monkeypatch.setattr(runner.subprocess, "run", fake_run)
+    assert (
+        runner.main(
+            [
+                "ask",
+                "--cases",
+                str(cases),
+                "--answers",
+                str(answers),
+                "--only",
+                "total",
+                "--repeat",
+                str(repeat),
+            ]
+        )
+        == 0
+    )
+    expected = (
+        ["total.md"]
+        if repeat == 1
+        else ["total__r1.md", "total__r2.md", "total__r3.md"]
+    )
+    assert sorted(p.name for p in answers.iterdir()) == expected
+    assert [(answers / name).read_text("utf-8") for name in expected] == [
+        f"answer {i}" for i in range(1, repeat + 1)
+    ]
+    assert calls == ["Kaç yolculuk?"] * repeat
+
+
+@pytest.mark.parametrize("repeat", ["0", "-1"])
+def test_ask_rejects_nonpositive_repeat(fixture_eval, repeat):
+    _, cases, _, answers = fixture_eval
+    assert (
+        implementation("run_eval").main(
+            [
+                "ask",
+                "--cases",
+                str(cases),
+                "--answers",
+                str(answers),
+                "--repeat",
+                repeat,
+            ]
+        )
+        == 1
+    )
+    assert not answers.exists()
+
+
+@pytest.mark.parametrize("c,n,k,want", [(3, 3, 3, 1), (2, 3, 3, 0), (2, 3, 2, 1 / 3)])
+def test_pass_hat_k(c, n, k, want):
+    assert implementation("scoring").pass_hat_k(c, n, k) == pytest.approx(want)
+
+
+def test_score_repeats_and_only(fixture_eval, monkeypatch):
+    runner = implementation("run_eval")
+    db, cases, golden_dir, answers = fixture_eval
+    monkeypatch.setattr(runner, "GOLDEN_DIR", golden_dir)
+    assert runner.main(["golden", "--db", str(db), "--cases", str(cases)]) == 0
+    answers.mkdir()
+    for i in range(1, 4):
+        (answers / f"total__r{i}.md").write_text(
+            "123456.25" if i < 3 else "ERROR: failed", encoding="utf-8"
+        )
+        (answers / f"scope__r{i}.md").write_text(
+            "Kapsam sonu 2025-12-31, yok.", encoding="utf-8"
+        )
+    # A stale single-run file must not count as a fourth run.
+    (answers / "total.md").write_text("123456.25", encoding="utf-8")
+    args = ["score", "--cases", str(cases), "--answers", str(answers)]
+    assert runner.main(args) == 2
+    report = json.loads((answers / "score.json").read_text("utf-8"))
+    total = report["cases"]["total"]
+    assert (total["runs"], total["passes"], total["ok"]) == (3, 2, False)
+    assert total["pass_rate"] == pytest.approx(2 / 3)
+    assert total["pass_hat_k"] == 0
+    assert report["cases"]["scope"]["pass_hat_k"] == 1
+    assert report["mean_pass_at_1"] == pytest.approx(5 / 6)
+    assert report["mean_pass_hat_k"] == 0.5
+    assert "2/3" in (answers / "score.md").read_text("utf-8")
+    assert runner.main(args + ["--only", "scope"]) == 0
+    report = json.loads((answers / "score.json").read_text("utf-8"))
+    assert report["total"] == report["passed"] == 1
+    assert list(report["cases"]) == ["scope"]
+    assert runner.main(args + ["--only", "unknown"]) == 1
+
+
+def test_score_only_legacy_shape(fixture_eval, monkeypatch):
+    runner = implementation("run_eval")
+    db, cases, golden_dir, answers = fixture_eval
+    monkeypatch.setattr(runner, "GOLDEN_DIR", golden_dir)
+    runner.main(["golden", "--db", str(db), "--cases", str(cases)])
+    answers.mkdir()
+    (answers / "total.md").write_text("123456.25", encoding="utf-8")
+    assert (
+        runner.main(
+            [
+                "score",
+                "--cases",
+                str(cases),
+                "--answers",
+                str(answers),
+                "--only",
+                "total",
+            ]
+        )
+        == 0
+    )
+    report = json.loads((answers / "score.json").read_text("utf-8"))
+    assert set(report) == {"veri_surumu", "passed", "total", "cases"}
+    assert set(report["cases"]["total"]) == {"ok", "checks"}
+    assert (answers / "score.md").read_text("utf-8").endswith("- total: geçti\n")
+
+
+@pytest.mark.parametrize(
+    "quantity,ok",
+    [
+        ("", True),
+        ("99999", True),
+        ("100000", False),
+        ("123.456", False),
+        ("123,456", False),
+        ("0,2 milyon", False),
+    ],
+)
+def test_forbid_large_numbers_without_refusal_date(quantity, ok):
+    checks = evaluate(
+        f"2024 için eşleşen istasyon bulunamadı. {quantity}",
+        forbid_large_numbers=True,
+        must_mention=["(?i)bulunamad|yok|eşleşen"],
+    )
+    assert all(check["ok"] for check in checks) is ok
+
+
+@pytest.mark.parametrize(
+    "answer,want",
+    [
+        ("%12,345", 12.345),
+        ("12.345%", 12.345),
+        ("yüzde -12,345", -12.345),
+        ("%34,5", 34.5),
+    ],
+)
+def test_percentage_decimal_precision(answer, want):
+    numbers = implementation("scoring").extract_numbers(answer)
+    assert len(numbers) == 1
+    assert numbers[0].value == pytest.approx(want)
+
+
+def test_new_cases_reference_sql_in_memory():
+    cases = implementation("run_eval").load_cases(ROOT / "evals/cases.toml")
+    new = {case["id"]: case for case in cases[10:]}
+    assert list(new) == [
+        "station_not_found",
+        "ambiguous_station_yenimahalle",
+        "hourly_out_of_scope",
+        "yoy_percentage_m2",
+    ]
+    with duckdb.connect(":memory:") as con:
+        con.execute("CREATE SCHEMA marts")
+        con.execute("CREATE TABLE marts.dim_station_group(station_group VARCHAR)")
+        con.execute(
+            "INSERT INTO marts.dim_station_group VALUES ('Yenimahalle'), ('Yenimahalle (Marmaray)'), ('Yeni Mahalle'), ('Other')"
+        )
+        con.execute("CREATE TABLE marts.fct_station_daily(ride_date DATE)")
+        con.execute(
+            "INSERT INTO marts.fct_station_daily VALUES ('2021-01-01'), ('2025-12-31')"
+        )
+        con.execute(
+            "CREATE TABLE marts.fct_line_daily(ride_date DATE, line_name VARCHAR, journey_count_estimated BIGINT, journey_count BIGINT)"
+        )
+        con.execute(
+            "INSERT INTO marts.fct_line_daily VALUES ('2024-01-01', 'M2-YENIKAPI-HACIOSMAN', 100, 900), ('2024-12-31', 'M2-YENIKAPI-HACIOSMAN', 100, 900), ('2025-01-01', 'M2-YENIKAPI-HACIOSMAN', 250, 900), ('2025-01-01', 'M4', 999, 999), ('2026-01-01', 'M2-YENIKAPI-HACIOSMAN', 999, 999)"
+        )
+        references = {}
+        for key, case in new.items():
+            cursor = con.execute(case["reference_sql"])
+            references[key] = {
+                "columns": [c[0] for c in cursor.description],
+                "rows": cursor.fetchall(),
+            }
+    assert references["station_not_found"]["rows"] == []
+    assert {row[0] for row in references["ambiguous_station_yenimahalle"]["rows"]} == {
+        "Yenimahalle",
+        "Yenimahalle (Marmaray)",
+        "Yeni Mahalle",
+    }
+    assert [str(v) for v in references["hourly_out_of_scope"]["rows"][0]] == [
+        "2021-01-01",
+        "2025-12-31",
+    ]
+    percentage = new["yoy_percentage_m2"]
+    ref = references[percentage["id"]]
+    assert ref["rows"][0][ref["columns"].index(percentage["numbers"][0])] == 25
+    scoring = implementation("scoring")
+    assert all(
+        c["ok"] for c in scoring.score_answer(percentage, "%25,0 artış", ref, "v")
+    )
+    assert not all(
+        c["ok"] for c in scoring.score_answer(percentage, "%50 artış", ref, "v")
+    )
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        "M2 hattının (Yenikapı–Hacıosman) 2025 yolculuk sayısı 2024'e göre **yüzde 5,51 azaldı**.",
+        "M2 (Yenikapı–Hacıosman) hattının yolculuk sayısı 2025'te 2024'e göre **yüzde 5,51 azaldı**.",
+        "M2 hattının 2025 toplam yolculuğu 2024'e göre **yaklaşık %5,51 azaldı**.",
+    ],
+)
+def test_signed_by_words_real_answer_excerpts(answer):
+    cases = implementation("run_eval").load_cases(ROOT / "evals/cases.toml")
+    case = next(c for c in cases if c["id"] == "yoy_percentage_m2")
+    reference = {"columns": ["percentage_change"], "rows": [[-5.514670632430195]]}
+    assert all(
+        c["ok"]
+        for c in implementation("scoring").score_answer(case, answer, reference, "v")
+    )
+
+
+@pytest.mark.parametrize(
+    "answer,expected,enabled,ok",
+    [
+        ("yüzde 5,51 arttı", -5.5147, True, False),
+        ("yüzde 5,51 azaldı ve arttı", -5.5147, True, False),
+        ("yüzde 5,51", -5.5147, True, False),
+        ("yüzde 5,51 azaldı", -5.5147, None, False),
+        ("yüzde 5,51 azaldı", -5.5147, False, False),
+        ("yüzde -5,51 arttı", -5.5147, True, True),
+        ("yüzde -5,51", -5.5147, None, True),
+        ("yüzde 5,51 düştü", -5.5147, True, True),
+        ("yüzde 5,51 geriledi", -5.5147, True, True),
+        ("eksi yüzde 5,51", -5.5147, True, True),
+        ("yüzde 5,51 yükseldi", -5.5147, True, False),
+        ("yüzde 5,51 arttı", 5.5147, True, True),
+        ("yüzde 5,51 yükseldi", 5.5147, True, True),
+        ("yüzde 5,51 azaldı", 5.5147, True, False),
+        ("yüzde 5,51 arttı ve düştü", 5.5147, True, False),
+        ("yüzde 5,51", 5.5147, None, True),
+        ("yüzde 9,51 azaldı", -5.5147, True, False),
+        (
+            "yüzde 5,51 azaldı. 2024 artık yıl olduğundan 366 günlük.",
+            -5.5147,
+            True,
+            True,
+        ),
+    ],
+)
+def test_signed_by_words_direction_and_opt_in(answer, expected, enabled, ok):
+    case = {"numbers": ["change"]}
+    if enabled is not None:
+        case["signed_by_words"] = enabled
+    checks = implementation("scoring").score_answer(
+        case, answer, {"columns": ["change"], "rows": [[expected]]}, "v"
+    )
+    assert all(c["ok"] for c in checks) is ok
+
+
+def test_station_not_found_accepts_bulamadim():
+    cases = implementation("run_eval").load_cases(ROOT / "evals/cases.toml")
+    case = next(c for c in cases if c["id"] == "station_not_found")
+    checks = implementation("scoring").score_answer(
+        case,
+        'Veride "Zeytinlik Meydanı" adında bir istasyon bulamadım, '
+        "bu yüzden 2024 için bir yolculuk sayısı veremiyorum.",
+        {"columns": ["station_group"], "rows": []},
+        "v",
+    )
+    assert all(c["ok"] for c in checks)
+
+
+@pytest.mark.parametrize(
+    "text,want",
+    [
+        ("-%5,51", -5.51),
+        ("+%5,51", 5.51),
+        ("%-5,51", -5.51),
+        ("%5-%6", 6),
+        ("2024-%5", 5),
+    ],
+)
+def test_review_percentage_sign(text, want):
+    scoring = implementation("scoring")
+    assert scoring.extract_numbers(text)[-1].value == pytest.approx(want)
+    if want < 0:
+        assert scoring.number_matches(text, -5.5147, True)
+        assert not scoring.number_matches(text, 5.51)
+
+
+@pytest.mark.parametrize(
+    "answer,ok",
+    [
+        (
+            "M2 hattı 2025'te %5,51 büyüdü (Not: bazı günlerde veri eksikliği var).",
+            False,
+        ),
+        ("M2 hattı değişimi %5,51 oldu. Öte yandan 2023'te seferler azaldı.", False),
+        ("yüzde 5,51 azaldı. Yaz aylarında artış görüldü.", True),
+        ("yüzde 5,51 azaldı\n```sql\nSELECT 1 AS artis_yuzdesi\n```", True),
+        ("%5,51 düşük", False),
+        ("%5,51 düşün", False),
+        ("%5,51 eksik", False),
+        ("EKSİ yüzde 5,51", True),
+        ("%5.51 azaldı! Artış oldu.", True),
+        ("%5,51 oldu? Azaldı.", False),
+        ("%5,51 oldu\nAzaldı.", False),
+        ("1.234.567 yolculukta %5,51 azaldı.", True),
+        ("```\n%5,51 azaldı\n```\nSayı veremiyorum.", False),
+    ],
+)
+def test_review_direction_sentence(answer, ok):
+    assert implementation("scoring").number_matches(answer, -5.5147, True) is ok
+
+
+@pytest.mark.parametrize(
+    "text", ["2021.01.01 - 2025.12.31", "1.1.2024", "01.01.2024", "123456abcdef"]
+)
+def test_review_dates_and_identifiers_not_large(text):
+    checks = implementation("scoring").score_answer(
+        {"forbid_large_numbers": True, "refusal": True},
+        f"Veri kapsamı 2025-12-31; {text}; istasyon bulunamadı.",
+        {"columns": ["last"], "rows": [["2025-12-31"]]},
+        "v",
+    )
+    assert all(c["ok"] for c in checks)
+
+
+@pytest.mark.parametrize(
+    "text,want",
+    [
+        ("217 bin", 217000),
+        ("217k", 217000),
+        ("12.345", 12345),
+        ("% 12,345", 12.345),
+        ("12,345 %", 12.345),
+        ("Yüzde 12,345", 12.345),
+    ],
+)
+def test_review_preserves_quantity_forms(text, want):
+    assert implementation("scoring").extract_numbers(text)[0].value == pytest.approx(
+        want
+    )
+
+
+@pytest.mark.parametrize("field", ["signed_by_words", "forbid_large_numbers"])
+def test_review_rejects_string_boolean(tmp_path, field):
+    text = (ROOT / "evals/cases.toml").read_text("utf-8")
+    text = text.replace("[[case]]", f'[[case]]\n{field} = "false"', 1)
+    path = tmp_path / "cases.toml"
+    path.write_text(text, encoding="utf-8")
+    with pytest.raises(TypeError, match=field):
+        implementation("run_eval").load_cases(path)
+
+
+def test_review_rejects_empty_only():
+    with pytest.raises(ValueError):
+        implementation("run_eval").select_cases([{"id": "total"}], "")
+
+
+@pytest.mark.parametrize("c,n,k", [(1, 1, 2), (2, 1, 1), (0, 1, 0)])
+def test_review_pass_hat_k_invalid(c, n, k):
+    with pytest.raises(ValueError):
+        implementation("scoring").pass_hat_k(c, n, k)
+
+
+def test_review_pass_hat_k_zero_successes():
+    assert implementation("scoring").pass_hat_k(0, 3, 3) == 0
