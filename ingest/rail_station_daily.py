@@ -35,6 +35,16 @@ API_COLUMNS = {
 }
 
 
+def create_rail_station_daily(connection: duckdb.DuckDBPyConnection) -> None:
+    """Create the daily raw table using the ingest column definitions."""
+    connection.execute("CREATE SCHEMA IF NOT EXISTS raw")
+    columns_sql = ", ".join(f"{name} {kind}" for name, kind in API_COLUMNS.items())
+    connection.execute(
+        f"CREATE TABLE IF NOT EXISTS raw.rail_station_daily ({columns_sql}, "
+        "resource_id VARCHAR, source_last_modified TIMESTAMP, ingested_at TIMESTAMPTZ)"
+    )
+
+
 def create_source_versions(connection: duckdb.DuckDBPyConnection) -> None:
     """Create the shared source fingerprint registry for both ingest scripts."""
     connection.execute("CREATE SCHEMA IF NOT EXISTS raw")
@@ -221,15 +231,10 @@ def main():
         os.replace(temporary, landing)
 
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        columns_sql = ", ".join(f"{name} {kind}" for name, kind in API_COLUMNS.items())
         names_sql = ", ".join(API_COLUMNS)
         with duckdb.connect(str(db_path)) as connection:
             create_source_versions(connection)
-            connection.execute("CREATE SCHEMA IF NOT EXISTS raw")
-            connection.execute(
-                f"CREATE TABLE IF NOT EXISTS raw.rail_station_daily ({columns_sql}, "
-                "resource_id VARCHAR, source_last_modified TIMESTAMP, ingested_at TIMESTAMPTZ)"
-            )
+            create_rail_station_daily(connection)
             connection.execute("BEGIN")
             try:
                 connection.execute(

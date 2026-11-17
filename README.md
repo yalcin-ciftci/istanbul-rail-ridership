@@ -69,7 +69,7 @@ The intermediate views are described in [_intermediate.yml](transform/models/int
 - **Group codes into physical complexes through a reviewed mapping seed.** The current mapping covers 371 codes → 253 groups, confirmed against the local database read-only. The seed supports human review; groups are a project mapping, not an IBB field ([seed](transform/seeds/station_group_map.csv), [M3](docs/M3.md)).
 - **Treat the source district field as unreliable.** District-based analysis needs additional validation; the MCP tool's `sema` warnings and the example agent repeat this caveat.
 
-Final build at M3: `dbt build` PASS=64, WARN=6, ERROR=0. The six warnings are the data-quality tests above, kept as warnings on purpose so the counts stay visible. Python: 206 tests, including metric contract synchronization, analysis publication, MCP database isolation, directly queryable schema names and station-group acronym regressions (see also [M3 results](docs/M3.md#results-2026-11-15)). On every push, GitHub Actions runs Ruff and pytest on Ubuntu and Windows ([ci.yml](.github/workflows/ci.yml)); `dbt build` needs the downloaded data and is run locally.
+Final build at M3: `dbt build` PASS=64, WARN=6, ERROR=0. The six warnings are the data-quality tests above, kept as warnings on purpose so the counts stay visible. Python: 206 tests, including metric contract synchronization, analysis publication, MCP database isolation, directly queryable schema names and station-group acronym regressions (see also [M3 results](docs/M3.md#results-2026-11-15)).
 
 ## Quickstart
 
@@ -133,6 +133,9 @@ uv run python tools/publish_analysis_db.py
 uv run pytest -q
 uv run python ulasim_mcp/server.py # stdio MCP: normally launched by an MCP client; waits silently here (Ctrl+C to exit)
 ```
+
+CI runs Ruff, pytest and `dbt build --empty` on Ubuntu and Windows using empty source tables created from ingest definitions, including all dbt unit tests ([ci.yml](.github/workflows/ci.yml)).
+Local PowerShell check (choose a new temporary file): `$env:PYTHONUTF8 = "1"; uv run --offline python tools/init_empty_db.py --db "$env:TEMP/ulasim-ci.duckdb"; if ($LASTEXITCODE -ne 0) { throw "Empty database initialization failed" }; $env:ULASIM_DUCKDB_PATH = "$env:TEMP/ulasim-ci.duckdb"; try { uv run --offline dbt build --project-dir transform --profiles-dir transform --empty } finally { Remove-Item Env:ULASIM_DUCKDB_PATH }`.
 
 The source database defaults to `data/ulasim.duckdb`. The dbt profile accepts `ULASIM_DUCKDB_PATH` to override it; the ingest script accepts `--db`. The publisher accepts `--source` and `--target`; its defaults resolve relative to the repository, independently of the working directory. It verifies row counts before atomically replacing `data/ulasim_analysis.duckdb`, leaving the previous copy intact on failure. Publish again after each successful build. The agent sees only cleaned marts, and can keep reading the published copy while ingest writes to the source database. Publishing itself requires the source writer to finish. If locations change, set the MCP server's `ULASIM_DB` to the publisher's target analysis file.
 

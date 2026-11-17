@@ -29,3 +29,9 @@ jobs:
         run: uv run ruff format --check .
       - name: Tests
         run: uv run pytest -q
+      - name: Initialize empty dbt database
+        run: uv run python tools/init_empty_db.py --db "${{ runner.temp }}/ci.duckdb"
+      - name: Build dbt with empty sources
+        env:
+          ULASIM_DUCKDB_PATH: ${{ runner.temp }}/ci.duckdb
+        run: uv run dbt build --project-dir transform --profiles-dir transform --empty
