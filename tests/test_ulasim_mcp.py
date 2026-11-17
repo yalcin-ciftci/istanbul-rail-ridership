@@ -54,6 +54,18 @@ def test_sema_unreadable_contract_returns_error(db, tmp_path, monkeypatch, conte
     result = module.sema()
     assert "hata" in result
     assert "sözleşme" in result["hata"].lower()
+    assert result["hata_turu"] == "sozlesme"
+    assert result["ipucu"] is None
+
+
+def test_empty_result_ignores_character_budget(db, monkeypatch):
+    monkeypatch.setenv("ULASIM_YANIT_KARAKTER_SINIRI", "1")
+    result = load_server().sorgu("SELECT 1 WHERE false")
+    assert result["satirlar"] == []
+    assert result["satir_sayisi"] == 0
+    assert result["kesilme_nedeni"] is None
+    assert result["kesildi"] is False
+    assert "not" not in result
 
 
 def load_server():

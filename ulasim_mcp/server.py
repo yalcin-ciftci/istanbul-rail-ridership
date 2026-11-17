@@ -153,7 +153,10 @@ def _data_version(con: duckdb.DuckDBPyConnection) -> dict[str, Any] | None:
 
 
 def _schema(con: duckdb.DuckDBPyConnection) -> dict[str, Any]:
-    contract = load_contract()
+    try:
+        contract = load_contract()
+    except ValueError as exc:
+        return _error(str(exc), "sozlesme")
     tables = con.execute(
         """
         SELECT table_name, comment
@@ -274,7 +277,10 @@ def sorgu(sql: str, satir_siniri: int = 200) -> dict[str, Any]:
             )
         result_rows = [[_json_value(value) for value in row] for row in rows[:limit]]
         reason = "satir_siniri" if len(rows) > limit else None
-        if len(json.dumps(result_rows, ensure_ascii=False)) > character_limit:
+        if (
+            result_rows
+            and len(json.dumps(result_rows, ensure_ascii=False)) > character_limit
+        ):
             if (
                 result_rows
                 and len(json.dumps(result_rows[:1], ensure_ascii=False))
