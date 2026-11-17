@@ -86,6 +86,7 @@ unit_tests:
           - {ride_date: '2022-10-31', journey_count: 211, passenger_count: 100}
           - {ride_date: '2022-11-08', journey_count: 107, passenger_count: 100}
           - {ride_date: '2022-11-01', journey_count: 210, passenger_count: 100}
+          - {ride_date: '2022-11-09', journey_count: 210, passenger_count: 0}
       - input: ref('journey_suspect_overrides')
         rows:
           - {ride_date: '2022-10-31'}
@@ -96,6 +97,7 @@ unit_tests:
         - {ride_date: '2022-10-31', journey_suspect: true, journey_suspect_source: hourly_override}
         - {ride_date: '2022-11-08', journey_suspect: false, journey_suspect_source: null}
         - {ride_date: '2022-11-01', journey_suspect: true, journey_suspect_source: rule}
+        - {ride_date: '2022-11-09', journey_suspect: false, journey_suspect_source: null}
 
 seeds:
   - name: journey_suspect_overrides

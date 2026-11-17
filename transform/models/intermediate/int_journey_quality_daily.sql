@@ -12,7 +12,7 @@ select
     q.row_count,
     q.even_share,
     q.journey_passenger_ratio,
-    (q.even_share >= 0.99 and q.journey_passenger_ratio >= 1.8)
+    coalesce(q.even_share >= 0.99 and q.journey_passenger_ratio >= 1.8, false)
         or o.ride_date is not null as journey_suspect,
     case
         when q.even_share >= 0.99 and q.journey_passenger_ratio >= 1.8 then 'rule'
