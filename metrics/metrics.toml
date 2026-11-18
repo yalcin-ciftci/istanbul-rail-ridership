@@ -54,7 +54,7 @@ text_tr = "Kaynaktaki ilçe alanı (district, districts) güvenilir değildir; i
 
 [[rule]]
 id = "weekend"
-text_tr = "Hafta sonu Cumartesi–Pazar olarak tanımlanır; resmî tatiller ayrılmadı. Hafta içi/sonu hesaplarında bu tanımı açık yaz."
+text_tr = "Hafta sonu Cumartesi–Pazar olarak tanımlanır. Resmî/dini tatiller ve tam gün kısıtlamaları `marts.dim_calendar_day` tablosunda işaretlidir. Hafta içi/sonu karşılaştırmalarında varsayılan tanım takvim günüdür (tatiller hariç tutulmaz); aralıkta hafta içine düşen tam gün tatil ve tam gün kısıtlama günlerinin sayısını cevapta bir cümleyle söyle. Kullanıcı 'tatiller hariç', 'normal iş günü' gibi bir şey isterse `is_regular_workday = true` kullan ve bunu açıkça yaz. Takvim etiketi bir günün neden farklı olduğunun kanıtı değildir."
 
 [[rule]]
 id = "source_license"

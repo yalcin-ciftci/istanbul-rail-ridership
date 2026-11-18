@@ -62,6 +62,19 @@ def test_contract_schema():
     assert all(rule["text_tr"].strip() for rule in data["rule"])
 
 
+def test_weekend_calendar_rule():
+    rules = {rule["id"]: rule["text_tr"] for rule in contract()["rule"]}
+    assert rules["weekend"] == (
+        "Hafta sonu Cumartesi–Pazar olarak tanımlanır. Resmî/dini tatiller ve tam gün "
+        "kısıtlamaları `marts.dim_calendar_day` tablosunda işaretlidir. Hafta içi/sonu "
+        "karşılaştırmalarında varsayılan tanım takvim günüdür (tatiller hariç tutulmaz); "
+        "aralıkta hafta içine düşen tam gün tatil ve tam gün kısıtlama günlerinin sayısını "
+        "cevapta bir cümleyle söyle. Kullanıcı 'tatiller hariç', 'normal iş günü' gibi bir "
+        "şey isterse `is_regular_workday = true` kullan ve bunu açıkça yaz. Takvim etiketi "
+        "bir günün neden farklı olduğunun kanıtı değildir."
+    )
+
+
 def test_marts_descriptions_and_sql_match_contract():
     models = {}
     for filename in ("_marts.yml", "_station_groups.yml", "_hour_profile.yml"):

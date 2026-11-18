@@ -1,7 +1,7 @@
 {
   "veri_surumu": "ae5b065db736",
   "saatlik_veri_surumu": "6f1876b236c2",
-  "olusturma": "2026-11-18T03:08:03.415413+00:00",
+  "olusturma": "2026-11-18T06:19:07.336007+00:00",
   "cases": {
     "busiest_stations_2025": {
       "columns": [
@@ -252,6 +252,26 @@
       "rows": [
         [
           6473043
+        ]
+      ]
+    },
+    "m2_regular_workday_2024": {
+      "columns": [
+        "journeys"
+      ],
+      "rows": [
+        [
+          504944.7
+        ]
+      ]
+    },
+    "m4_weekday_holiday_count_2025": {
+      "columns": [
+        "holiday_days"
+      ],
+      "rows": [
+        [
+          10
         ]
       ]
     },

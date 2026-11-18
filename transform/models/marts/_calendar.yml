@@ -1,0 +1,79 @@
+version: 2
+models:
+- name: dim_calendar_day
+  description: Sabit 2021–2025 tarih ekseni; ajana açılan doğrulanmış takvim. Tatil/kısıtlama
+    öncelikleri int_calendar_day modelinden gelir. Etiket neden kanıtı değildir; kaynak
+    takvimi kapsar, kapsamı calendar_events seed açıklamasındaki kaynaklarla sınırlıdır.
+  columns:
+  - name: ride_date
+    description: 2021-01-01…2025-12-31 arasında her gün; birincil anahtar. Etiket
+      neden kanıtı değildir; kaynak takvimi kapsar, kapsamı calendar_events seed açıklamasındaki
+      kaynaklarla sınırlıdır.
+    data_tests:
+    - not_null
+    - unique
+  - name: day_of_week_iso
+    description: 'ISO haftanın günü: 1=Pazartesi, 7=Pazar. Etiket neden kanıtı değildir;
+      kaynak takvimi kapsar, kapsamı calendar_events seed açıklamasındaki kaynaklarla
+      sınırlıdır.'
+    data_tests:
+    - not_null
+  - name: is_weekend
+    description: Cumartesi veya Pazar. Etiket neden kanıtı değildir; kaynak takvimi
+      kapsar, kapsamı calendar_events seed açıklamasındaki kaynaklarla sınırlıdır.
+    data_tests:
+    - not_null
+  - name: is_public_holiday
+    description: Resmî tatil türü mevcut; tam veya yarım gün olabilir. Etiket neden
+      kanıtı değildir; kaynak takvimi kapsar, kapsamı calendar_events seed açıklamasındaki
+      kaynaklarla sınırlıdır.
+    data_tests:
+    - not_null
+  - name: is_religious_holiday
+    description: Dini tatil türü mevcut; tam veya yarım gün olabilir. Etiket neden
+      kanıtı değildir; kaynak takvimi kapsar, kapsamı calendar_events seed açıklamasındaki
+      kaynaklarla sınırlıdır.
+    data_tests:
+    - not_null
+  - name: is_holiday_full_day
+    description: Tam gün resmî veya dini tatil; yarım gün arife dahil değildir. Etiket
+      neden kanıtı değildir; kaynak takvimi kapsar, kapsamı calendar_events seed açıklamasındaki
+      kaynaklarla sınırlıdır.
+    data_tests:
+    - not_null
+  - name: is_holiday_half_day
+    description: Yarım gün tatil; tam gün tatil önceliklidir. Etiket neden kanıtı
+      değildir; kaynak takvimi kapsar, kapsamı calendar_events seed açıklamasındaki
+      kaynaklarla sınırlıdır.
+    data_tests:
+    - not_null
+  - name: is_restriction_full_day
+    description: Tam gün COVID kısıtlaması. Etiket neden kanıtı değildir; kaynak takvimi
+      kapsar, kapsamı calendar_events seed açıklamasındaki kaynaklarla sınırlıdır.
+    data_tests:
+    - not_null
+  - name: is_restriction_partial
+    description: Yalnız kısmi/gece COVID kısıtlaması; tam gün önceliklidir. Etiket
+      neden kanıtı değildir; kaynak takvimi kapsar, kapsamı calendar_events seed açıklamasındaki
+      kaynaklarla sınırlıdır.
+    data_tests:
+    - not_null
+  - name: is_special_event
+    description: Özel etkinlik mevcut. Etiket neden kanıtı değildir; kaynak takvimi
+      kapsar, kapsamı calendar_events seed açıklamasındaki kaynaklarla sınırlıdır.
+    data_tests:
+    - not_null
+  - name: labels_tr
+    description: Intermediate sırasındaki Türkçe gün etiketleri; etkinlik yoksa NULL.
+      Etiket neden kanıtı değildir; kaynak takvimi kapsar, kapsamı calendar_events
+      seed açıklamasındaki kaynaklarla sınırlıdır.
+  - name: source_urls
+    description: Seed kaynak URL adresleri; tekil, alfabetik, | ile ayrılmış; etkinlik
+      yoksa NULL. Etiket neden kanıtı değildir; kaynak takvimi kapsar, kapsamı calendar_events
+      seed açıklamasındaki kaynaklarla sınırlıdır.
+  - name: is_regular_workday
+    description: Hafta içi VE tam gün tatil değil VE tam gün kısıtlama değil; yarım
+      günler dahildir. Etiket neden kanıtı değildir; kaynak takvimi kapsar, kapsamı
+      calendar_events seed açıklamasındaki kaynaklarla sınırlıdır.
+    data_tests:
+    - not_null

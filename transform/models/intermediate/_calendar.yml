@@ -1,8 +1,7 @@
 version: 2
 seeds:
 - name: calendar_events
-  description: Doğrulanmış tatil/kısıtlama/etkinlik takvimi; intermediate şemasında kalır, analiz kopyasına
-    ve MCP ajanına açılmaz. 2021 kısıtlamaları İçişleri genelgelerinden (20076, 20856, 3514, 5673, 6638, 7377, 7576, 8160, 8878, 10530) eklendi; hafta sonu satırları haftalık kuralın takvime açılımıdır; hafta içi gece aralıkları hafta sonu günlerini de kapsayan aralık olarak yazıldı, aynı gündeki tam gün satırı önceliklidir. Kaynak URL'ler genelgelerin kurum sunucularındaki kopyalarıdır.
+  description: Doğrulanmış tatil/kısıtlama/etkinlik takvimi; intermediate şemasında kalır, ajana `marts.dim_calendar_day` üzerinden açılır. 2021 kısıtlamaları İçişleri genelgelerinden (20076, 20856, 3514, 5673, 6638, 7377, 7576, 8160, 8878, 10530) eklendi; hafta sonu satırları haftalık kuralın takvime açılımıdır; hafta içi gece aralıkları hafta sonu günlerini de kapsayan aralık olarak yazıldı, aynı gündeki tam gün satırı önceliklidir. Kaynak URL'ler genelgelerin kurum sunucularındaki kopyalarıdır.
   columns:
   - name: start_date
     description: Etkinliğin ilk günü; dahil.

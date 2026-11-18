@@ -1,0 +1,103 @@
+version: 2
+unit_tests:
+- name: test_calendar_mart_workday_flags
+  model: dim_calendar_day
+  overrides:
+    vars:
+      calendar_start_date: '2024-01-01'
+      calendar_end_date: '2024-01-07'
+  given:
+  - input: ref('int_calendar_day')
+    rows:
+    - ride_date: '2024-01-01'
+      event_types: public_holiday
+      labels: Fixture
+      is_holiday: true
+      is_half_day_holiday: false
+      is_covid_restriction: false
+      is_partial_covid_restriction: false
+      has_special_event: false
+    - ride_date: '2024-01-02'
+      event_types: public_holiday
+      labels: Fixture
+      is_holiday: false
+      is_half_day_holiday: true
+      is_covid_restriction: false
+      is_partial_covid_restriction: false
+      has_special_event: false
+    - ride_date: '2024-01-03'
+      event_types: covid_restriction
+      labels: Fixture
+      is_holiday: false
+      is_half_day_holiday: false
+      is_covid_restriction: true
+      is_partial_covid_restriction: false
+      has_special_event: false
+    - ride_date: '2024-01-04'
+      event_types: covid_restriction
+      labels: Fixture
+      is_holiday: false
+      is_half_day_holiday: false
+      is_covid_restriction: false
+      is_partial_covid_restriction: true
+      has_special_event: false
+  - input: ref('calendar_events')
+    rows: []
+  expect:
+    rows:
+    - ride_date: '2024-01-01'
+      day_of_week_iso: 1
+      is_weekend: false
+      is_holiday_full_day: true
+      is_holiday_half_day: false
+      is_restriction_full_day: false
+      is_restriction_partial: false
+      is_regular_workday: false
+    - ride_date: '2024-01-02'
+      day_of_week_iso: 2
+      is_weekend: false
+      is_holiday_full_day: false
+      is_holiday_half_day: true
+      is_restriction_full_day: false
+      is_restriction_partial: false
+      is_regular_workday: true
+    - ride_date: '2024-01-03'
+      day_of_week_iso: 3
+      is_weekend: false
+      is_holiday_full_day: false
+      is_holiday_half_day: false
+      is_restriction_full_day: true
+      is_restriction_partial: false
+      is_regular_workday: false
+    - ride_date: '2024-01-04'
+      day_of_week_iso: 4
+      is_weekend: false
+      is_holiday_full_day: false
+      is_holiday_half_day: false
+      is_restriction_full_day: false
+      is_restriction_partial: true
+      is_regular_workday: true
+    - ride_date: '2024-01-05'
+      day_of_week_iso: 5
+      is_weekend: false
+      is_holiday_full_day: false
+      is_holiday_half_day: false
+      is_restriction_full_day: false
+      is_restriction_partial: false
+      is_regular_workday: true
+    - ride_date: '2024-01-06'
+      day_of_week_iso: 6
+      is_weekend: true
+      is_holiday_full_day: false
+      is_holiday_half_day: false
+      is_restriction_full_day: false
+      is_restriction_partial: false
+      is_regular_workday: false
+    - ride_date: '2024-01-07'
+      day_of_week_iso: 7
+      is_weekend: true
+      is_holiday_full_day: false
+      is_holiday_half_day: false
+      is_restriction_full_day: false
+      is_restriction_partial: false
+      is_regular_workday: false

@@ -279,6 +279,43 @@ rules = ["default_metric", "daily_line_gap"]
 refusal = false
 
 [[case]]
+id = "m2_regular_workday_2024"
+question_tr = "2024'te M2 hattında tatiller hariç normal iş günü ortalama günlük yolculuk kaç?"
+reference_sql = """
+WITH daily AS (
+    SELECT f.ride_date, sum(f.journey_count_estimated) AS journeys
+    FROM marts.fct_line_daily AS f
+    JOIN marts.dim_line AS d ON f.line_name = d.line_name
+    JOIN marts.dim_calendar_day AS c ON f.ride_date = c.ride_date
+    WHERE d.line_code = 'M2'
+      AND f.ride_date >= DATE '2024-01-01' AND f.ride_date < DATE '2025-01-01'
+      AND c.is_regular_workday = true
+    GROUP BY f.ride_date
+)
+SELECT avg(journeys) AS journeys FROM daily
+"""
+numbers = ["journeys"]
+must_mention = ["(?i)tatiller.{0,30}(hariç|dış|çıkar)|tatil.{0,30}hariç"]
+must_not_mention = []
+rules = ["default_metric", "weekend"]
+refusal = false
+
+[[case]]
+id = "m4_weekday_holiday_count_2025"
+question_tr = "2025'te M4'te hafta içi ortalaması hesaplanırken kaç resmî/dini tam gün tatil hafta içine düşüyor?"
+reference_sql = """
+SELECT count(*) AS holiday_days
+FROM marts.dim_calendar_day
+WHERE ride_date >= DATE '2025-01-01' AND ride_date < DATE '2026-01-01'
+  AND NOT is_weekend AND is_holiday_full_day
+"""
+numbers = ["holiday_days"]
+must_mention = ["(?i)hafta iç", "(?i)tam gün"]
+must_not_mention = []
+rules = ["weekend"]
+refusal = false
+
+[[case]]
 id = "system_growth_2024"
 question_tr = "2024'te raylı sistemin toplam yolculuğu 2023'e göre yüzde kaç değişti?"
 reference_sql = """

@@ -33,6 +33,61 @@ def test_cases_and_rule_contract():
         runner.validate_sql(case["reference_sql"])
 
 
+def test_calendar_references_and_exclusion_warning():
+    cases = {
+        c["id"]: c
+        for c in implementation("run_eval").load_cases(ROOT / "evals/cases.toml")
+    }
+    assert "m2_regular_workday_2024" in cases
+    assert "m4_weekday_holiday_count_2025" in cases
+    with duckdb.connect(":memory:") as con:
+        con.execute("CREATE SCHEMA marts")
+        con.execute(
+            "CREATE TABLE marts.dim_calendar_day (ride_date DATE, is_regular_workday BOOLEAN, is_holiday_full_day BOOLEAN, is_weekend BOOLEAN)"
+        )
+        con.execute(
+            "INSERT INTO marts.dim_calendar_day VALUES ('2024-01-01', false, true, false), ('2024-01-02', true, false, false), ('2024-01-03', true, false, false), ('2025-01-01', false, true, false), ('2025-01-04', false, true, true), ('2025-01-06', true, false, false)"
+        )
+        con.execute(
+            "CREATE TABLE marts.dim_line (line_name VARCHAR, line_code VARCHAR)"
+        )
+        con.execute(
+            "INSERT INTO marts.dim_line VALUES ('line2', 'M2'), ('line4', 'M4')"
+        )
+        con.execute(
+            "CREATE TABLE marts.fct_line_daily (ride_date DATE, line_name VARCHAR, journey_count_estimated BIGINT)"
+        )
+        con.execute(
+            "INSERT INTO marts.fct_line_daily VALUES ('2024-01-01', 'line2', 9999), ('2024-01-02', 'line2', 100), ('2024-01-02', 'line2', 200), ('2024-01-03', 'line2', 500), ('2024-01-02', 'line4', 9999)"
+        )
+        case = cases["m2_regular_workday_2024"]
+        cursor = con.execute(case["reference_sql"])
+        reference = {
+            "columns": [c[0] for c in cursor.description],
+            "rows": cursor.fetchall(),
+        }
+        assert reference["rows"] == [(400.0,)]
+        scorer = implementation("scoring").score_answer
+        assert all(
+            c["ok"]
+            for c in scorer(
+                case,
+                "Tatiller hariç ortalama 400 turnike geçişi. Veri sürümü v.",
+                reference,
+                "v",
+            )
+        )
+        assert not all(
+            c["ok"]
+            for c in scorer(
+                case, "Ortalama 400 turnike geçişi. Veri sürümü v.", reference, "v"
+            )
+        )
+        assert con.execute(
+            cases["m4_weekday_holiday_count_2025"]["reference_sql"]
+        ).fetchall() == [(1,)]
+
+
 def test_hourly_override_reference_and_estimate_warning():
     runner = implementation("run_eval")
     cases = runner.load_cases(ROOT / "evals/cases.toml")
