@@ -32,9 +32,15 @@ seeds:
         station_group: varchar
         status: varchar
         note: varchar
+    external_line_map:
+      +schema: intermediate
+      +column_types:
+        line_code: varchar
+        daily_line_name: varchar
     external_annual_totals:
       +schema: intermediate
       +column_types:
+        line_code: varchar
         year: integer
         operator: varchar
         measure: varchar

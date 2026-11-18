@@ -24,3 +24,4 @@ from {{ ref('external_annual_totals') }} as r
 left join daily_year as d on r.year = d.year
 left join gap_year as g on r.year = g.year
 where r.operator = 'metro_istanbul' and r.measure = 'annual_passengers'
+    and r.line_code is null

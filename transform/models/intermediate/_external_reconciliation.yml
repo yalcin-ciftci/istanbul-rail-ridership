@@ -70,6 +70,46 @@ unit_tests:
       ratio_source: 1.0
       gap_lower_bound: 0
       ratio_with_gap: 1.0
+- name: external_line_missing_gap_and_boundaries
+  model: int_external_reconciliation_line_year
+  given:
+  - input: ref('external_annual_totals')
+    format: sql
+    rows: |
+      select 2024 as year, 'metro_istanbul' as operator,
+          'annual_passengers' as measure, line_code, 100::bigint as value
+      from (values ('M1'), ('M2'), ('M3'), ('M4'), ('M5'), ('M6'), ('M7'), ('M8')) as r(line_code)
+      union all
+      select 2024, 'metro_istanbul', 'annual_passengers', null, 800
+  - input: ref('external_line_map')
+    format: sql
+    rows: |
+      select line_code, line_code as daily_line_name
+      from (values ('M1'), ('M2'), ('M3'), ('M4'), ('M5'), ('M6'), ('M7'), ('M8')) as m(line_code)
+  - input: ref('fct_line_daily')
+    rows:
+    - {ride_date: '2024-01-01', line_name: M1, journey_count_estimated: 40}
+    - {ride_date: '2024-01-02', line_name: M1, journey_count_estimated: 55}
+    - {ride_date: '2024-01-01', line_name: M2, journey_count_estimated: 105}
+    - {ride_date: '2024-01-01', line_name: M3, journey_count_estimated: 94}
+    - {ride_date: '2024-01-01', line_name: M4, journey_count_estimated: 106}
+    - {ride_date: '2024-01-01', line_name: M7, journey_count_estimated: 85}
+    - {ride_date: '2023-01-01', line_name: M8, journey_count_estimated: 100}
+  - input: ref('fct_line_daily_gap_year')
+    rows:
+    - {year: 2024, daily_line_name: M5, hourly_passage_in_gap: 99}
+    - {year: 2024, daily_line_name: M7, hourly_passage_in_gap: 10}
+    - {year: 2023, daily_line_name: M8, hourly_passage_in_gap: 100}
+  expect:
+    rows:
+    - {year: 2024, line_code: M1, daily_line_name: M1, report_value: 100, daily_journey_estimated: 95, ratio_estimated: 0.95, gap_lower_bound: 0, ratio_with_gap: 0.95, status: ok}
+    - {year: 2024, line_code: M2, daily_line_name: M2, report_value: 100, daily_journey_estimated: 105, ratio_estimated: 1.05, gap_lower_bound: 0, ratio_with_gap: 1.05, status: ok}
+    - {year: 2024, line_code: M3, daily_line_name: M3, report_value: 100, daily_journey_estimated: 94, ratio_estimated: 0.94, gap_lower_bound: 0, ratio_with_gap: 0.94, status: low}
+    - {year: 2024, line_code: M4, daily_line_name: M4, report_value: 100, daily_journey_estimated: 106, ratio_estimated: 1.06, gap_lower_bound: 0, ratio_with_gap: 1.06, status: high}
+    - {year: 2024, line_code: M5, daily_line_name: M5, report_value: 100, daily_journey_estimated: null, ratio_estimated: null, gap_lower_bound: 99, ratio_with_gap: 0.99, status: missing_in_daily}
+    - {year: 2024, line_code: M6, daily_line_name: M6, report_value: 100, daily_journey_estimated: null, ratio_estimated: null, gap_lower_bound: 0, ratio_with_gap: 0.0, status: missing_in_daily}
+    - {year: 2024, line_code: M7, daily_line_name: M7, report_value: 100, daily_journey_estimated: 85, ratio_estimated: 0.85, gap_lower_bound: 10, ratio_with_gap: 0.95, status: ok}
+    - {year: 2024, line_code: M8, daily_line_name: M8, report_value: 100, daily_journey_estimated: null, ratio_estimated: null, gap_lower_bound: 0, ratio_with_gap: 0.0, status: missing_in_daily}
 seeds:
 - name: external_annual_totals
   description: Metro İstanbul faaliyet raporlarındaki yıllık yolcu serisi; intermediate
@@ -78,7 +118,7 @@ seeds:
   data_tests:
   - unique:
       arguments:
-        column_name: struct_pack(year := year, operator := operator, measure := measure)
+        column_name: struct_pack(year := year, operator := operator, measure := measure, line_code := line_code)
   columns:
   - name: year
     description: Rapor yılı.
@@ -104,8 +144,17 @@ seeds:
     description: Raporda basılı sayfa numarası.
     data_tests:
     - not_null
+  - name: line_code
+    description: Rapor hat kodu; sistem toplamlarında NULL.
   - name: note
     description: Kaynaklar arasındaki fark ve tarihsel seri notu.
+- name: external_line_map
+  description: Rapor hat kodunun günlük veri kümesindeki hat adına eşlemesi; intermediate içinde kalır.
+  columns:
+  - name: line_code
+    data_tests: [not_null, unique]
+  - name: daily_line_name
+    data_tests: [not_null, unique]
 models:
 - name: int_external_reconciliation_year
   description: 'Yıl × işletmeci dış sağlama view''ı. Metro İstanbul hat kümesi: fct_line_daily
@@ -165,3 +214,38 @@ models:
     description: Raporda basılı sayfa numarası.
     data_tests:
     - not_null
+- name: int_external_reconciliation_line_year
+  description: >-
+    Yıl × rapor hat kodu karşılaştırması. Günlük satırı olmayan hat-yıl NULL kalır;
+    boşluk alt sınırı yalnız tanısal orana eklenir. Marts ve ajana açılmaz.
+  data_tests:
+  - unique:
+      arguments:
+        column_name: struct_pack(year := year, line_code := line_code)
+  columns:
+  - name: year
+    data_tests: [not_null]
+  - name: line_code
+    data_tests: [not_null]
+  - name: daily_line_name
+    data_tests: [not_null]
+  - name: report_value
+    description: Faaliyet raporundaki hat bazında yıllık yolcu sayısı.
+    data_tests: [not_null]
+  - name: daily_journey_estimated
+    description: Günlük tahmin toplamı; hat-yıl satırı yoksa NULL, ölçülmüş sıfır değildir.
+  - name: ratio_estimated
+    description: Günlük tahmin / rapor; günlük veri yoksa NULL.
+  - name: gap_lower_bound
+    description: Aynı hat-yıl için saatlik veriden ölçülen boşluk; yoksa 0.
+    data_tests: [not_null]
+  - name: ratio_with_gap
+    description: (COALESCE(günlük tahmin, 0) + boşluk alt sınırı) / rapor; yalnız tanısal.
+    data_tests: [not_null]
+  - name: status
+    description: Günlük yoksa missing_in_daily; boşlukla oran 0,95–1,05 dahil ok, altında low, üstünde high.
+    data_tests:
+    - not_null
+    - accepted_values:
+        arguments:
+          values: [missing_in_daily, ok, low, high]
