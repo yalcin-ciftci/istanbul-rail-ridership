@@ -374,6 +374,60 @@ models:
         quote: false
       config:
         where: relative_index is not null
+- name: fct_line_daily_coverage_month
+  description: Hat × ay günlük kapsama kontrolü; yalnız günlük ada eşli saatlik hat-aylar,
+    2021-01 (günlük verinin başlangıcı) ile 2024-10 arası. Öncelik hourly_incomplete, missing_in_daily, partial_in_daily,
+    ok.
+  data_tests:
+  - unique:
+      arguments:
+        column_name: struct_pack(line_code := line_code, month := month)
+  columns:
+  - name: line_code
+    description: Saatlik kısa hat kodu.
+    data_tests:
+    - not_null
+  - name: daily_line_name
+    description: hourly_line_map içindeki günlük uzun hat adı.
+    data_tests:
+    - not_null
+  - name: month
+    description: Saatlik verinin bulunduğu YYYY-MM ayı; en geç 2024-10.
+    data_tests:
+    - not_null
+  - name: hourly_days
+    description: Günlük saatlik geçiş toplamı pozitif olan farklı gün sayısı.
+    data_tests:
+    - not_null
+  - name: hourly_passage
+    description: Ayın eşlenmiş saatlik turnike geçişleri toplamı.
+    data_tests:
+    - not_null
+  - name: daily_days
+    description: Aynı hat ve ayda journey_count_estimated > 0 olan farklı gün sayısı.
+    data_tests:
+    - not_null
+  - name: daily_journey_estimated
+    description: Aynı hat ve ayın günlük tahmin toplamı; günlük veri yoksa 0.
+    data_tests:
+    - not_null
+  - name: hourly_month_flag
+    description: Ayın ALL kalite bayrağı; ALL yoksa * bayrağı.
+    data_tests:
+    - not_null
+  - name: status
+    description: Önce hourly_month_flag ok değilse hourly_incomplete; sonra hourly_days
+      ≥ 20 ve daily_days = 0 ise missing_in_daily; sonra hourly_days ≥ 20 ve daily_days
+      < hourly_days / 2 ise partial_in_daily; aksi ok.
+    data_tests:
+    - not_null
+    - accepted_values:
+        arguments:
+          values:
+          - hourly_incomplete
+          - missing_in_daily
+          - partial_in_daily
+          - ok
 seeds:
 - name: hourly_line_map
   description: Ham 28 kısa hat kodunun gözden geçirilmiş günlük eşlemesi; 21 hat günlük
@@ -912,3 +966,172 @@ unit_tests:
     - month: 2024-05
       line_code: '*'
       quality_flag: empty
+- name: line_daily_coverage_priority_and_boundaries
+  model: fct_line_daily_coverage_month
+  given:
+  - input: ref('fct_station_group_hourly')
+    format: sql
+    rows: |-
+      with cases as (select * from (values
+          ('N19', date '2023-01-01', 19),
+          ('N20', date '2023-02-01', 20),
+          ('LOW', date '2023-03-01', 20),
+          ('HALF', date '2023-04-01', 20),
+          ('ODD', date '2023-05-01', 21),
+          ('BAD', date '2023-06-01', 20),
+          ('STAR', date '2023-07-01', 20),
+          ('BOTH', date '2023-08-01', 20),
+          ('ZERO', date '2023-09-01', 20),
+          ('NOFLAG', date '2023-10-01', 20)
+      ) as t(line_code, start_date, days))
+      select start_date + cast(n as integer) as ride_date, line_code, 10::bigint as passage_count
+      from cases cross join range(21) as r(n) where n < days
+      union all
+      select start_date, line_code, 5::bigint from cases
+      union all
+      select date '2023-01-31', 'N19', 0::bigint
+      union all
+      select date '2024-11-01', 'N20', 10::bigint
+      union all
+      select date '2023-01-01', 'UNMAPPED', 10::bigint
+  - input: ref('hourly_line_map')
+    rows:
+    - line_code: N19
+      daily_line_name: N19
+    - line_code: N20
+      daily_line_name: N20
+    - line_code: LOW
+      daily_line_name: LOW
+    - line_code: HALF
+      daily_line_name: HALF
+    - line_code: ODD
+      daily_line_name: ODD
+    - line_code: BAD
+      daily_line_name: BAD
+    - line_code: STAR
+      daily_line_name: STAR
+    - line_code: BOTH
+      daily_line_name: BOTH
+    - line_code: ZERO
+      daily_line_name: ZERO
+    - line_code: NOFLAG
+      daily_line_name: NOFLAG
+    - line_code: UNMAPPED
+      daily_line_name: null
+  - input: ref('fct_line_daily')
+    format: sql
+    rows: |-
+      select start_date + cast(n as integer) as ride_date, line_name, 2::bigint as journey_count_estimated
+      from (values
+          ('LOW', date '2023-03-01', 9),
+          ('HALF', date '2023-04-01', 10),
+          ('ODD', date '2023-05-01', 10),
+          ('STAR', date '2023-07-01', 3)
+      ) as t(line_name, start_date, days)
+      cross join range(10) as r(n) where n < days
+      union all
+      select date '2023-09-01', 'ZERO', 0::bigint
+  - input: ref('fct_hourly_coverage_month')
+    rows:
+    - month: 2023-01
+      line_code: ALL
+      quality_flag: ok
+    - month: 2023-02
+      line_code: ALL
+      quality_flag: ok
+    - month: 2023-03
+      line_code: ALL
+      quality_flag: ok
+    - month: 2023-04
+      line_code: ALL
+      quality_flag: ok
+    - month: 2023-05
+      line_code: ALL
+      quality_flag: ok
+    - month: 2023-06
+      line_code: ALL
+      quality_flag: partial_days
+    - month: 2023-07
+      line_code: '*'
+      quality_flag: empty
+    - month: 2023-08
+      line_code: ALL
+      quality_flag: ok
+    - month: 2023-08
+      line_code: '*'
+      quality_flag: empty
+    - month: 2023-09
+      line_code: ALL
+      quality_flag: ok
+  expect:
+    rows:
+    - line_code: N19
+      month: 2023-01
+      hourly_days: 19
+      daily_days: 0
+      hourly_passage: 195
+      daily_journey_estimated: 0
+      status: ok
+    - line_code: N20
+      month: 2023-02
+      hourly_days: 20
+      daily_days: 0
+      hourly_passage: 205
+      daily_journey_estimated: 0
+      status: missing_in_daily
+    - line_code: LOW
+      month: 2023-03
+      hourly_days: 20
+      daily_days: 9
+      hourly_passage: 205
+      daily_journey_estimated: 18
+      status: partial_in_daily
+    - line_code: HALF
+      month: 2023-04
+      hourly_days: 20
+      daily_days: 10
+      hourly_passage: 205
+      daily_journey_estimated: 20
+      status: ok
+    - line_code: ODD
+      month: 2023-05
+      hourly_days: 21
+      daily_days: 10
+      hourly_passage: 215
+      daily_journey_estimated: 20
+      status: partial_in_daily
+    - line_code: BAD
+      month: 2023-06
+      hourly_days: 20
+      daily_days: 0
+      hourly_passage: 205
+      daily_journey_estimated: 0
+      status: hourly_incomplete
+    - line_code: STAR
+      month: 2023-07
+      hourly_days: 20
+      daily_days: 3
+      hourly_passage: 205
+      daily_journey_estimated: 6
+      status: hourly_incomplete
+    - line_code: BOTH
+      month: 2023-08
+      hourly_days: 20
+      daily_days: 0
+      hourly_passage: 205
+      daily_journey_estimated: 0
+      status: missing_in_daily
+    - line_code: ZERO
+      month: 2023-09
+      hourly_days: 20
+      daily_days: 0
+      hourly_passage: 205
+      daily_journey_estimated: 0
+      status: missing_in_daily
+    - line_code: NOFLAG
+      month: 2023-10
+      hourly_days: 20
+      daily_days: 0
+      hourly_passage: 205
+      daily_journey_estimated: 0
+      status: hourly_incomplete

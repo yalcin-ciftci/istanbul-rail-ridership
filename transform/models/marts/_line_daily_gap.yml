@@ -1,0 +1,97 @@
+version: 2
+unit_tests:
+- name: line_daily_gap_year_status_scope_and_denominator
+  model: fct_line_daily_gap_year
+  given:
+  - input: ref('fct_line_daily_coverage_month')
+    rows:
+    - line_code: M9
+      daily_line_name: M9
+      month: 2023-01
+      status: missing_in_daily
+      hourly_passage: 30
+    - line_code: M9
+      daily_line_name: M9
+      month: 2023-02
+      status: partial_in_daily
+      hourly_passage: 20
+    - line_code: M9
+      daily_line_name: M9
+      month: 2023-03
+      status: hourly_incomplete
+      hourly_passage: 900
+    - line_code: M9
+      daily_line_name: M9
+      month: 2020-01
+      status: missing_in_daily
+      hourly_passage: 900
+    - line_code: M9
+      daily_line_name: M9
+      month: 2024-11
+      status: missing_in_daily
+      hourly_passage: 900
+  - input: ref('fct_line_daily')
+    rows:
+    - ride_date: '2023-01-01'
+      line_name: M1
+      journey_count_estimated: 100
+    - ride_date: '2023-12-31'
+      line_name: M2
+      journey_count_estimated: 100
+  expect:
+    rows:
+    - year: 2023
+      daily_line_name: M9
+      missing_months: 2
+      hourly_passage_in_gap: 50
+      daily_year_total: 200
+      gap_share_of_daily: 0.25
+models:
+- name: fct_line_daily_gap_year
+  description: Günlük veride bazı hatlar dönem dönem yoktur (ör. M9 2022–2023, M8/F4/havalimanı
+    TCDD hattı 2024 öncesi); bu hat-yıllar `marts.fct_line_daily_gap_year` tablosundadır.
+    Bir hat ya da sistem toplamı bu yılları içeriyorsa veya yıllar arası karşılaştırma
+    yapılıyorsa tabloya bak; eksik hat-yılını ve saatlik veriden alt sınır tahminini
+    (`hourly_passage_in_gap`) cevapta belirt; eksik yılı 0 yolculuk diye sunma; tahmini
+    günlük toplama ekleme.
+  data_tests:
+  - unique:
+      arguments:
+        column_name: struct_pack(year := year, daily_line_name := daily_line_name)
+  - accepted_values:
+      name: line_daily_gap_share_range
+      arguments:
+        column_name: (gap_share_of_daily between 0 and 1)
+        values:
+        - true
+        quote: false
+  columns:
+  - name: year
+    description: Boşluk gözlenen yıl; 2021–2024, saatlik kapsamı içinde.
+    data_tests:
+    - not_null
+  - name: daily_line_name
+    description: Günlük uzun hat adı; yıl ile birlikte grain.
+    data_tests:
+    - not_null
+  - name: missing_months
+    description: missing_in_daily ve partial_in_daily aylarının sayısı.
+    data_tests:
+    - not_null
+  - name: hourly_passage_in_gap
+    description: Boşluk aylarındaki saatlik turnike geçişi toplamı. Günlük journey_count
+      ile aynı kavramdır; aşama 3 mutabakatında sağlam aylarda oran yaklaşık 1,00.
+      İBB günlük verisi değildir; saatlik veriden alt sınır tahminidir. Saatlik veri
+      2024-10 ayında biter; 2024-11 sonrası boşluk ölçülemez. Günlük toplama eklenmez.
+    data_tests:
+    - not_null
+  - name: daily_year_total
+    description: O yılın tüm hatlar için tam yıllık günlük journey_count_estimated
+      toplamı.
+    data_tests:
+    - not_null
+  - name: gap_share_of_daily
+    description: hourly_passage_in_gap / daily_year_total; günlük toplama göre alt
+      sınır payı, 0–1.
+    data_tests:
+    - not_null

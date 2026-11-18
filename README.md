@@ -233,6 +233,7 @@ $prompt | claude -p --model sonnet --mcp-config .mcp.json --strict-mcp-config `
 
 ## Limitations
 
+- Some line-years are absent from daily data (including M9 in 2022–2023); system totals and year-over-year growth can be incomplete. Check `marts.fct_line_daily_gap_year` and state its hourly lower-bound estimate separately; do not add it to daily totals or treat a missing line-year as zero journeys. Hourly coverage ends in 2024-10 ([coverage gaps and external reconciliation](docs/M5.md#günlük-kapsama-boşlukları)).
 - Daily observations and typical hourly intensity profiles (2023-01–2024-07 baseline); no counts for a specific date and hour or for yesterday.
 - Historical coverage ends on 2025-12-31; no live service or ridership data.
 - This is an analytical tool, not a trip planner.

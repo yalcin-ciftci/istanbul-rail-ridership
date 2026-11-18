@@ -142,3 +142,21 @@ def test_hourly_contract_and_generated_rules():
     )
     for text in rules.values():
         assert text in block
+
+
+def test_daily_gap_rule_matches_mart_and_generated_agent():
+    rules = {r["id"]: r["text_tr"] for r in contract()["rule"]}
+    assert "daily_line_gap" in rules, "Daily line coverage warning is missing"
+    document = yaml.safe_load(
+        (ROOT / "transform/models/marts/_line_daily_gap.yml").read_text("utf-8")
+    )
+    model = next(
+        m for m in document["models"] if m["name"] == "fct_line_daily_gap_year"
+    )
+    assert model["description"] == rules["daily_line_gap"]
+    block = (
+        AGENT.read_text("utf-8")
+        .split("<!-- metrics:begin -->")[1]
+        .split("<!-- metrics:end -->")[0]
+    )
+    assert rules["daily_line_gap"] in block

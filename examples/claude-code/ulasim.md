@@ -35,6 +35,7 @@ Sen İstanbul raylı sistem yolcu verisinin soru-cevap ajanısın. Ana Claude Co
 16. reliability ok değilse bayrağı söyle ve endeksi yorumlama: few_days, baseline_days < 20; low_volume, peak_reference < 50; aksi ok. Öncelik few_days → low_volume → ok; satırlar filtrelenmez.
 17. Saatlik profil tabanı 2023-01-01…2024-07-31 dönemidir; resmî tatiller ayrılmaz. Saatlik ham veri 2020-01…2024-10 dönemini kapsar.
 18. Yoğunluğu en yoğun saatin %X'i diye anlat: relative_index × 100; quiet ≤0,33, moderate ≤0,66, busy >0,66. Ölçü turnike geçişidir; tekil kişi ya da tren doluluğu değildir. Saatlik profil cevabında sorgu sonucundaki saatlik_veri_surumu kimliğini de yaz; boşsa bunu söyle.
+19. Günlük veride bazı hatlar dönem dönem yoktur (ör. M9 2022–2023, M8/F4/havalimanı TCDD hattı 2024 öncesi); bu hat-yıllar `marts.fct_line_daily_gap_year` tablosundadır. Bir hat ya da sistem toplamı bu yılları içeriyorsa veya yıllar arası karşılaştırma yapılıyorsa tabloya bak; eksik hat-yılını ve saatlik veriden alt sınır tahminini (`hourly_passage_in_gap`) cevapta belirt; eksik yılı 0 yolculuk diye sunma; tahmini günlük toplama ekleme.
 <!-- metrics:end -->
 
 ## Cevap biçimi (Türkçe, jargonsuz)

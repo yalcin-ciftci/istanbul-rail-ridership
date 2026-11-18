@@ -1,0 +1,5 @@
+year,operator,measure,value,source_url,source_page,note
+2021,metro_istanbul,annual_passengers,474548282,https://www.metro.istanbul/Content/assets/uploaded/2021_faaliyetraporu.pdf,s.30,sunuşta 474.571.480; rapor içi fark
+2022,metro_istanbul,annual_passengers,760625243,https://www.metro.istanbul/Content/assets/uploaded/2022_faaliyetraporu_2023_28_mart.pdf,s.32,
+2023,metro_istanbul,annual_passengers,831297468,https://www.metro.istanbul/Content/assets/uploaded/2024_faaliyetraporu.pdf,s.31,2024 raporunun tarihsel serisi
+2024,metro_istanbul,annual_passengers,915314424,https://www.metro.istanbul/Content/assets/uploaded/2024_faaliyetraporu.pdf,s.30,

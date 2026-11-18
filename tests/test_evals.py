@@ -908,3 +908,73 @@ def test_review_pass_hat_k_invalid(c, n, k):
 
 def test_review_pass_hat_k_zero_successes():
     assert implementation("scoring").pass_hat_k(0, 3, 3) == 0
+
+
+def gap_cases():
+    cases = implementation("run_eval").load_cases(ROOT / "evals/cases.toml")
+    result = {
+        c["id"]: c
+        for c in cases
+        if c["id"] in {"line_gap_m9_2023", "system_growth_2024"}
+    }
+    assert set(result) == {"line_gap_m9_2023", "system_growth_2024"}
+    return result
+
+
+def test_daily_gap_reference_sql_uses_gap_and_system_estimate():
+    cases = gap_cases()
+    with duckdb.connect(":memory:") as con:
+        con.execute("CREATE SCHEMA marts")
+        con.execute(
+            "CREATE TABLE marts.fct_line_daily_gap_year "
+            "(year INTEGER, daily_line_name VARCHAR, hourly_passage_in_gap BIGINT)"
+        )
+        con.execute(
+            "INSERT INTO marts.fct_line_daily_gap_year VALUES "
+            "(2023, 'M9 ATAKOY-IKITELLI METRO', 75), "
+            "(2022, 'M9 ATAKOY-IKITELLI METRO', 999), (2023, 'M8', 888)"
+        )
+        con.execute(
+            "CREATE TABLE marts.fct_line_daily "
+            "(ride_date DATE, line_name VARCHAR, journey_count_estimated BIGINT, "
+            "journey_count BIGINT)"
+        )
+        con.execute(
+            "INSERT INTO marts.fct_line_daily VALUES "
+            "('2022-12-31', 'M2', 999, 999), ('2023-01-01', 'M2', 100, 900), "
+            "('2023-12-31', 'M4', 100, 900), ('2024-01-01', 'M2', 150, 900), "
+            "('2024-12-31', 'M4', 100, 900), ('2025-01-01', 'M2', 999, 999)"
+        )
+        assert con.execute(cases["line_gap_m9_2023"]["reference_sql"]).fetchall() == [
+            (75,)
+        ]
+        assert con.execute(cases["system_growth_2024"]["reference_sql"]).fetchall() == [
+            (25.0,)
+        ]
+
+
+@pytest.mark.parametrize(
+    "case_id,answer,ok",
+    [
+        ("line_gap_m9_2023", "M9 günlük veride yok; saatlik alt sınır 75 geçiş.", True),
+        ("line_gap_m9_2023", "Günlük verisi bulunmuyor; saatlik tahmin 75.", True),
+        ("line_gap_m9_2023", "Günlük kayıtlarda yer almıyor; saatlik alt sınır.", True),
+        ("line_gap_m9_2023", "Saatlik toplam 75 geçiş.", False),
+        ("line_gap_m9_2023", "Günlük veri eksik.", False),
+        ("line_gap_m9_2023", "Eksik günlük veri; saatlik var ama 0 yolculuk.", False),
+        ("line_gap_m9_2023", "Günlük veride yok. Bu 0 yolculuk demek değil; saatlik.", True),
+        ("line_gap_m9_2023", 'Günlük veride yok; bu "0 yolculuk" demek değil. Saatlik.', True),
+        ("line_gap_m9_2023", "Günlük veride yok; 0 yolculuk diye okumayın. Saatlik.", True),
+        ("line_gap_m9_2023", "Günlük veride yok. 2023'te 0 yolculuk var. Saatlik.", False),
+        ("system_growth_2024", "%25 arttı; M9 kapsamı eksik.", True),
+        ("system_growth_2024", "yüzde 25 arttı; M8.", True),
+        ("system_growth_2024", "%25 arttı.", False),
+        ("system_growth_2024", "25 arttı; kapsam eksik.", False),
+        ("system_growth_2024", "%25 azaldı; kapsam eksik.", False),
+    ],
+)
+def test_daily_gap_answer_patterns(case_id, answer, ok):
+    case = gap_cases()[case_id]
+    reference = {"columns": ["percentage_change"], "rows": [[25.0]]}
+    checks = implementation("scoring").score_answer(case, answer, reference, "v")
+    assert all(c["ok"] for c in checks) is ok

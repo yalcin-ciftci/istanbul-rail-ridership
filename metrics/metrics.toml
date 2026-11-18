@@ -97,3 +97,7 @@ text_tr = "Saatlik profil tabanı 2023-01-01…2024-07-31 dönemidir; resmî tat
 [[rule]]
 id = "hourly_relative"
 text_tr = "Yoğunluğu en yoğun saatin %X'i diye anlat: relative_index × 100; quiet ≤0,33, moderate ≤0,66, busy >0,66. Ölçü turnike geçişidir; tekil kişi ya da tren doluluğu değildir. Saatlik profil cevabında sorgu sonucundaki saatlik_veri_surumu kimliğini de yaz; boşsa bunu söyle."
+
+[[rule]]
+id = "daily_line_gap"
+text_tr = "Günlük veride bazı hatlar dönem dönem yoktur (ör. M9 2022–2023, M8/F4/havalimanı TCDD hattı 2024 öncesi); bu hat-yıllar `marts.fct_line_daily_gap_year` tablosundadır. Bir hat ya da sistem toplamı bu yılları içeriyorsa veya yıllar arası karşılaştırma yapılıyorsa tabloya bak; eksik hat-yılını ve saatlik veriden alt sınır tahminini (`hourly_passage_in_gap`) cevapta belirt; eksik yılı 0 yolculuk diye sunma; tahmini günlük toplama ekleme."

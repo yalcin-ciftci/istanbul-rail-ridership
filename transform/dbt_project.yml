@@ -32,6 +32,16 @@ seeds:
         station_group: varchar
         status: varchar
         note: varchar
+    external_annual_totals:
+      +schema: intermediate
+      +column_types:
+        year: integer
+        operator: varchar
+        measure: varchar
+        value: bigint
+        source_url: varchar
+        source_page: varchar
+        note: varchar
     journey_suspect_overrides:
       +column_types:
         ride_date: date

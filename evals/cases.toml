@@ -260,3 +260,40 @@ require_hourly_version = true
 must_not_mention = []
 rules = ["hourly_typical", "hourly_reliability", "hourly_scope", "hourly_relative"]
 refusal = false
+
+[[case]]
+id = "line_gap_m9_2023"
+question_tr = "M9 hattının 2023 toplam yolculuğu kaç?"
+reference_sql = """
+SELECT hourly_passage_in_gap
+FROM marts.fct_line_daily_gap_year
+WHERE year = 2023 AND daily_line_name = 'M9 ATAKOY-IKITELLI METRO'
+"""
+numbers = []
+must_mention = ["(?i)günlük veri(de|si)? .{0,40}(yok|bulunmuyor|eksik)|eksik|yer almıyor", "(?i)saatlik"]
+must_not_mention = ["(?i)\\b0 yolculuk(?![^.\\n]{0,25}(demek|değil|diye|olmaz))"]
+forbid_large_numbers = false
+rules = ["default_metric", "daily_line_gap"]
+refusal = false
+
+[[case]]
+id = "system_growth_2024"
+question_tr = "2024'te raylı sistemin toplam yolculuğu 2023'e göre yüzde kaç değişti?"
+reference_sql = """
+WITH yearly AS (
+    SELECT sum(CASE WHEN ride_date < DATE '2024-01-01'
+                    THEN journey_count_estimated ELSE 0 END) AS journeys_2023,
+           sum(CASE WHEN ride_date >= DATE '2024-01-01'
+                    THEN journey_count_estimated ELSE 0 END) AS journeys_2024
+    FROM marts.fct_line_daily
+    WHERE ride_date >= DATE '2023-01-01' AND ride_date < DATE '2025-01-01'
+)
+SELECT 100.0 * (journeys_2024 - journeys_2023) / nullif(journeys_2023, 0) AS percentage_change
+FROM yearly
+"""
+numbers = ["percentage_change"]
+signed_by_words = true
+must_mention = ["(?i)yüzde|%", "(?i)M9|M8|eksik|kapsam"]
+must_not_mention = []
+rules = ["default_metric", "daily_line_gap"]
+refusal = false

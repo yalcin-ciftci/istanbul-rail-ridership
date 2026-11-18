@@ -1,0 +1,167 @@
+version: 2
+unit_tests:
+- name: external_reconciliation_ratios_and_operator_gap
+  model: int_external_reconciliation_year
+  given:
+  - input: ref('external_annual_totals')
+    rows:
+    - year: 2022
+      operator: metro_istanbul
+      measure: annual_passengers
+      value: 200
+      source_url: https://example.invalid/2022
+      source_page: s.1
+    - year: 2023
+      operator: metro_istanbul
+      measure: annual_passengers
+      value: 100
+      source_url: https://example.invalid/2023
+      source_page: s.2
+  - input: ref('fct_line_daily')
+    rows:
+    - ride_date: '2022-01-01'
+      line_name: M1
+      journey_count_estimated: 80
+      journey_count: 160
+    - ride_date: '2022-12-31'
+      line_name: M2
+      journey_count_estimated: 100
+      journey_count: 200
+    - ride_date: '2022-01-01'
+      line_name: TCDD X
+      journey_count_estimated: 999
+      journey_count: 999
+    - ride_date: '2022-01-01'
+      line_name: IETT X
+      journey_count_estimated: 999
+      journey_count: 999
+    - ride_date: '2023-01-01'
+      line_name: M1
+      journey_count_estimated: 100
+      journey_count: 100
+  - input: ref('fct_line_daily_gap_year')
+    rows:
+    - year: 2022
+      daily_line_name: M8
+      hourly_passage_in_gap: 20
+    - year: 2022
+      daily_line_name: TCDD X
+      hourly_passage_in_gap: 999
+    - year: 2022
+      daily_line_name: IETT X
+      hourly_passage_in_gap: 999
+  expect:
+    rows:
+    - year: 2022
+      operator: metro_istanbul
+      report_value: 200
+      daily_journey_estimated: 180
+      daily_journey_count: 360
+      ratio_estimated: 0.9
+      ratio_source: 1.8
+      gap_lower_bound: 20
+      ratio_with_gap: 1.0
+    - year: 2023
+      operator: metro_istanbul
+      report_value: 100
+      daily_journey_estimated: 100
+      daily_journey_count: 100
+      ratio_estimated: 1.0
+      ratio_source: 1.0
+      gap_lower_bound: 0
+      ratio_with_gap: 1.0
+seeds:
+- name: external_annual_totals
+  description: Metro İstanbul faaliyet raporlarındaki yıllık yolcu serisi; intermediate
+    şemasında, marts ve ajana açılmaz. Kaynaklar görevde verilen yerel araştırmadan
+    alınmıştır.
+  data_tests:
+  - unique:
+      arguments:
+        column_name: struct_pack(year := year, operator := operator, measure := measure)
+  columns:
+  - name: year
+    description: Rapor yılı.
+    data_tests:
+    - not_null
+  - name: operator
+    description: 'İşletmeci: metro_istanbul.'
+    data_tests:
+    - not_null
+  - name: measure
+    description: 'Rapor ölçüsü: annual_passengers.'
+    data_tests:
+    - not_null
+  - name: value
+    description: Raporda yayımlanan yıllık yolcu toplamı.
+    data_tests:
+    - not_null
+  - name: source_url
+    description: Faaliyet raporunun kaynak adresi.
+    data_tests:
+    - not_null
+  - name: source_page
+    description: Raporda basılı sayfa numarası.
+    data_tests:
+    - not_null
+  - name: note
+    description: Kaynaklar arasındaki fark ve tarihsel seri notu.
+models:
+- name: int_external_reconciliation_year
+  description: 'Yıl × işletmeci dış sağlama view''ı. Metro İstanbul hat kümesi: fct_line_daily
+    içinde line_name ''TCDD%'' ve ''IETT%'' ile başlamayan hatlar. M8 işletmesi 31.12.2022''de
+    Metro İstanbul''a devredildi. Rapor yolcu serisi ile günlük turnike geçişlerini
+    karşılaştırır; gap eklenmiş oran yalnız tanısaldır, günlük toplam düzeltilmez.
+    2024-11 sonrası boşluk saatlik veriden ölçülemez. Marts''a ve analiz kopyasına
+    açılmaz.'
+  data_tests:
+  - unique:
+      arguments:
+        column_name: struct_pack(year := year, operator := operator)
+  columns:
+  - name: year
+    description: Rapor yılı.
+    data_tests:
+    - not_null
+  - name: operator
+    description: İşletmeci.
+    data_tests:
+    - not_null
+  - name: report_value
+    description: Faaliyet raporundaki yıllık yolcu toplamı.
+    data_tests:
+    - not_null
+  - name: daily_journey_estimated
+    description: Tanımlı Metro İstanbul hat kümesinin günlük tahmin toplamı.
+    data_tests:
+    - not_null
+  - name: daily_journey_count
+    description: Aynı hat kümesinin korunmuş günlük kaynak toplamı.
+    data_tests:
+    - not_null
+  - name: ratio_estimated
+    description: daily_journey_estimated / report_value.
+    data_tests:
+    - not_null
+  - name: ratio_source
+    description: daily_journey_count / report_value; 2022 kaynak şişmesini korur.
+    data_tests:
+    - not_null
+  - name: gap_lower_bound
+    description: Aynı yıl ve hat kümesinde saatlik veriden ölçülen boşluk alt sınırı;
+      yoksa 0.
+    data_tests:
+    - not_null
+  - name: ratio_with_gap
+    description: (daily_journey_estimated + gap_lower_bound) / report_value; yalnız
+      tanısal dış sağlama, günlük toplam düzeltmesi değildir.
+    data_tests:
+    - not_null
+  - name: source_url
+    description: Faaliyet raporunun kaynak adresi.
+    data_tests:
+    - not_null
+  - name: source_page
+    description: Raporda basılı sayfa numarası.
+    data_tests:
+    - not_null
