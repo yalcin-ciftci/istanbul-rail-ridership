@@ -1,0 +1,153 @@
+version: 2
+seeds:
+- name: calendar_events
+  description: Doğrulanmış tatil/kısıtlama/etkinlik takvimi; intermediate şemasında kalır, analiz kopyasına
+    ve MCP ajanına açılmaz. 2021 hafta sonu ve akşam sokağa çıkma kısıtlamaları (Ocak–Haziran 2021) birincil
+    kaynakla doğrulanamadığı için yok; yalnız 29.04–17.05.2021 tam kapanma var.
+  columns:
+  - name: start_date
+    description: Etkinliğin ilk günü; dahil.
+    data_tests:
+    - not_null
+  - name: end_date
+    description: Etkinliğin son günü; dahil.
+    data_tests:
+    - not_null
+  - name: event_type
+    description: Tatil, kısıtlama veya özel etkinlik türü.
+    data_tests:
+    - not_null
+    - accepted_values:
+        arguments:
+          values:
+          - public_holiday
+          - religious_holiday
+          - covid_restriction
+          - special_event
+  - name: label_tr
+    description: Türkçe olay açıklaması.
+    data_tests:
+    - not_null
+  - name: scope
+    description: Kaynağın coğrafi kapsamı.
+    data_tests:
+    - not_null
+    - accepted_values:
+        arguments:
+          values:
+          - national
+          - istanbul
+  - name: partial_day
+    description: Yalnız günün bir kısmı için geçerliyse true.
+    data_tests:
+    - not_null
+  - name: source_url
+    description: Doğrulanmış birincil kaynağın HTTPS adresi.
+    data_tests:
+    - not_null
+models:
+- name: int_calendar_day
+  description: Seed aralıklarını uç günler dahil açan, ride_date grain ile tek satır üreten takvim görünümü.
+    Tam gün, kısmi güne önceliklidir.
+  columns:
+  - name: ride_date
+    description: Etkinlik bulunan gün; grain ride_date.
+    data_tests:
+    - not_null
+  - name: event_types
+    description: Tekil türler alfabetik sırada virgülle birleşir.
+    data_tests:
+    - not_null
+  - name: labels
+    description: Etiketler (event_type, label_tr) sırasında, | ayıracıyla birleşir.
+    data_tests:
+    - not_null
+  - name: is_holiday
+    description: Tam günlük resmî veya dini tatil var.
+    data_tests:
+    - not_null
+  - name: is_half_day_holiday
+    description: Kısmi tatil var ve tam günlük tatil yok.
+    data_tests:
+    - not_null
+  - name: is_covid_restriction
+    description: Tam günlük COVID kısıtlaması var.
+    data_tests:
+    - not_null
+  - name: is_partial_covid_restriction
+    description: Kısmi COVID kısıtlaması var ve tam günlük kısıtlama yok.
+    data_tests:
+    - not_null
+  - name: has_special_event
+    description: Özel etkinlik var.
+    data_tests:
+    - not_null
+- name: int_daily_volume_anomaly_calendar
+  description: Grain (ride_date, scope, line_name). int_daily_volume_anomaly satırları ve tüm kolonları
+    aynen korunur; takvim ride_date üzerinden LEFT JOIN ile eklenir. calendar_explanation bir etikettir,
+    nedensellik kanıtı değildir. Eşikler ve taban değişmez.
+  columns:
+  - name: ride_date
+    description: Kaynak anomali tarihi.
+    data_tests:
+    - not_null
+  - name: scope
+    description: 'Kaynak scope: line veya system.'
+    data_tests:
+    - not_null
+  - name: line_name
+    description: Kaynak hat adı; sistem için *.
+    data_tests:
+    - not_null
+  - name: anomaly
+    description: Kaynak anomali sınıfı; değişmez.
+    data_tests:
+    - not_null
+  - name: journey_count
+    description: Kaynak sayım; aynen korunur.
+  - name: journey_count_estimated
+    description: Proje tahmini; aynen korunur, resmî İBB sayısı değildir.
+  - name: has_suspect_journeys
+    description: Kaynak şüpheli yolculuk bayrağı; aynen korunur.
+  - name: baseline_journeys
+    description: Kaynak medyan taban; aynen korunur.
+  - name: baseline_weeks
+    description: Kaynak gözlem sayısı; aynen korunur.
+  - name: ratio_to_baseline
+    description: Kaynak/taban oranı; aynen korunur.
+  - name: ratio_estimated_to_baseline
+    description: Tahmin/taban oranı; aynen korunur.
+  - name: calendar_event_types
+    description: O günün takvim türleri; eşleşme yoksa NULL.
+  - name: calendar_labels
+    description: O günün takvim etiketleri; eşleşme yoksa NULL.
+  - name: baseline_restricted_days
+    description: Önceki 7, 14, …, 56 günün kaçında tam COVID kısıtlaması var; INTEGER 0–8. Kısmi günler
+      sayılmaz.
+    data_tests:
+    - not_null
+    - accepted_values:
+        arguments:
+          values:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+          - 8
+          quote: false
+  - name: calendar_explanation
+    description: 'Öncelik: spike/drop dışı NULL; drop + tam/kısmi kısıtlama; drop + tam/kısmi tatil; spike
+      + özel etkinlik; spike + kısıtlı taban; kalan spike/drop unexplained.'
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - covid_restriction
+          - holiday
+          - special_event
+          - baseline_restricted
+          - unexplained

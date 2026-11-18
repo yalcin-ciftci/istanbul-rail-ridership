@@ -52,3 +52,13 @@ seeds:
         station_group: varchar
         match_method: varchar
         note: varchar
+    calendar_events:
+      +schema: intermediate
+      +column_types:
+        start_date: date
+        end_date: date
+        event_type: varchar
+        label_tr: varchar
+        scope: varchar
+        partial_day: boolean
+        source_url: varchar

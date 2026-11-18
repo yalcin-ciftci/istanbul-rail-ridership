@@ -6,7 +6,7 @@ models:
       Daily quality table at (ride_date, scope, line_name), sourced from
       fct_line_daily including line-level records. System rows sum all lines
       and use line_name '*'. Flags only expose volume changes; counts are unchanged.
-      No holiday calendar: holiday drops can be expected false positives.
+      Holiday/restriction labels: see int_daily_volume_anomaly_calendar.
     columns:
       - name: ride_date
         description: Observed journey date; missing system dates are checked separately.

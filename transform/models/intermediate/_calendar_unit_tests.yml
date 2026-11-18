@@ -1,0 +1,519 @@
+version: 2
+unit_tests:
+- name: test_calendar_inclusive_ranges_and_order
+  model: int_calendar_day
+  given:
+  - input: ref('calendar_events')
+    rows:
+    - start_date: '2024-01-01'
+      end_date: '2024-01-03'
+      event_type: religious_holiday
+      label_tr: Z
+      scope: national
+      partial_day: false
+      source_url: https://example.org
+    - start_date: '2024-01-02'
+      end_date: '2024-01-02'
+      event_type: public_holiday
+      label_tr: B
+      scope: national
+      partial_day: false
+      source_url: https://example.org
+    - start_date: '2024-01-02'
+      end_date: '2024-01-02'
+      event_type: public_holiday
+      label_tr: A
+      scope: national
+      partial_day: true
+      source_url: https://example.org
+    - start_date: '2024-01-04'
+      end_date: '2024-01-04'
+      event_type: religious_holiday
+      label_tr: Half
+      scope: national
+      partial_day: true
+      source_url: https://example.org
+  expect:
+    rows:
+    - ride_date: '2024-01-01'
+      event_types: religious_holiday
+      labels: Z
+      is_holiday: true
+      is_half_day_holiday: false
+      is_covid_restriction: false
+      is_partial_covid_restriction: false
+      has_special_event: false
+    - ride_date: '2024-01-02'
+      event_types: public_holiday,religious_holiday
+      labels: A | B | Z
+      is_holiday: true
+      is_half_day_holiday: false
+      is_covid_restriction: false
+      is_partial_covid_restriction: false
+      has_special_event: false
+    - ride_date: '2024-01-03'
+      event_types: religious_holiday
+      labels: Z
+      is_holiday: true
+      is_half_day_holiday: false
+      is_covid_restriction: false
+      is_partial_covid_restriction: false
+      has_special_event: false
+    - ride_date: '2024-01-04'
+      event_types: religious_holiday
+      labels: Half
+      is_holiday: false
+      is_half_day_holiday: true
+      is_covid_restriction: false
+      is_partial_covid_restriction: false
+      has_special_event: false
+- name: test_calendar_full_and_partial_restrictions
+  model: int_calendar_day
+  given:
+  - input: ref('calendar_events')
+    rows:
+    - start_date: '2024-02-01'
+      end_date: '2024-02-02'
+      event_type: covid_restriction
+      label_tr: Partial
+      scope: national
+      partial_day: true
+      source_url: https://example.org
+    - start_date: '2024-02-02'
+      end_date: '2024-02-02'
+      event_type: covid_restriction
+      label_tr: Full
+      scope: national
+      partial_day: false
+      source_url: https://example.org
+    - start_date: '2024-02-02'
+      end_date: '2024-02-02'
+      event_type: special_event
+      label_tr: Event
+      scope: national
+      partial_day: false
+      source_url: https://example.org
+  expect:
+    rows:
+    - ride_date: '2024-02-01'
+      event_types: covid_restriction
+      labels: Partial
+      is_holiday: false
+      is_half_day_holiday: false
+      is_covid_restriction: false
+      is_partial_covid_restriction: true
+      has_special_event: false
+    - ride_date: '2024-02-02'
+      event_types: covid_restriction,special_event
+      labels: Full | Partial | Event
+      is_holiday: false
+      is_half_day_holiday: false
+      is_covid_restriction: true
+      is_partial_covid_restriction: false
+      has_special_event: true
+- name: test_anomaly_calendar_priority_and_nulls
+  model: int_daily_volume_anomaly_calendar
+  given:
+  - input: ref('int_daily_volume_anomaly')
+    rows:
+    - ride_date: '2024-01-01'
+      scope: system
+      line_name: '*'
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+      baseline_journeys: 100
+      baseline_weeks: 8
+      ratio_to_baseline: 1.0
+      ratio_estimated_to_baseline: 1.0
+      anomaly: drop
+    - ride_date: '2024-01-02'
+      scope: system
+      line_name: '*'
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+      baseline_journeys: 100
+      baseline_weeks: 8
+      ratio_to_baseline: 1.0
+      ratio_estimated_to_baseline: 1.0
+      anomaly: drop
+    - ride_date: '2024-01-03'
+      scope: system
+      line_name: '*'
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+      baseline_journeys: 100
+      baseline_weeks: 8
+      ratio_to_baseline: 1.0
+      ratio_estimated_to_baseline: 1.0
+      anomaly: drop
+    - ride_date: '2024-01-04'
+      scope: system
+      line_name: '*'
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+      baseline_journeys: 100
+      baseline_weeks: 8
+      ratio_to_baseline: 1.0
+      ratio_estimated_to_baseline: 1.0
+      anomaly: spike
+    - ride_date: '2024-01-05'
+      scope: system
+      line_name: '*'
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+      baseline_journeys: 100
+      baseline_weeks: 8
+      ratio_to_baseline: 1.0
+      ratio_estimated_to_baseline: 1.0
+      anomaly: none
+    - ride_date: '2024-01-06'
+      scope: system
+      line_name: '*'
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+      baseline_journeys: 100
+      baseline_weeks: 8
+      ratio_to_baseline: 1.0
+      ratio_estimated_to_baseline: 1.0
+      anomaly: drop
+    - ride_date: '2024-01-07'
+      scope: system
+      line_name: '*'
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+      baseline_journeys: 100
+      baseline_weeks: 8
+      ratio_to_baseline: 1.0
+      ratio_estimated_to_baseline: 1.0
+      anomaly: spike
+    - ride_date: '2024-01-12'
+      scope: system
+      line_name: '*'
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+      baseline_journeys: 100
+      baseline_weeks: 8
+      ratio_to_baseline: 1.0
+      ratio_estimated_to_baseline: 1.0
+      anomaly: spike
+    - ride_date: '2024-01-09'
+      scope: system
+      line_name: '*'
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+      baseline_journeys: 100
+      baseline_weeks: 8
+      ratio_to_baseline: 1.0
+      ratio_estimated_to_baseline: 1.0
+      anomaly: drop
+    - ride_date: '2024-01-10'
+      scope: system
+      line_name: '*'
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+      baseline_journeys: 100
+      baseline_weeks: 8
+      ratio_to_baseline: 1.0
+      ratio_estimated_to_baseline: 1.0
+      anomaly: no_baseline
+  - input: ref('int_calendar_day')
+    rows:
+    - ride_date: '2024-01-01'
+      event_types: fixture
+      labels: Label
+      is_holiday: true
+      is_half_day_holiday: false
+      is_covid_restriction: true
+      is_partial_covid_restriction: false
+      has_special_event: false
+    - ride_date: '2024-01-02'
+      event_types: fixture
+      labels: Label
+      is_holiday: true
+      is_half_day_holiday: false
+      is_covid_restriction: false
+      is_partial_covid_restriction: true
+      has_special_event: false
+    - ride_date: '2024-01-03'
+      event_types: fixture
+      labels: Label
+      is_holiday: false
+      is_half_day_holiday: true
+      is_covid_restriction: false
+      is_partial_covid_restriction: false
+      has_special_event: false
+    - ride_date: '2024-01-04'
+      event_types: fixture
+      labels: Label
+      is_holiday: false
+      is_half_day_holiday: false
+      is_covid_restriction: false
+      is_partial_covid_restriction: false
+      has_special_event: true
+    - ride_date: '2024-01-05'
+      event_types: fixture
+      labels: Label
+      is_holiday: false
+      is_half_day_holiday: false
+      is_covid_restriction: false
+      is_partial_covid_restriction: false
+      has_special_event: true
+    - ride_date: '2024-01-12'
+      event_types: fixture
+      labels: Label
+      is_holiday: true
+      is_half_day_holiday: false
+      is_covid_restriction: false
+      is_partial_covid_restriction: false
+      has_special_event: false
+    - ride_date: '2024-01-09'
+      event_types: fixture
+      labels: Label
+      is_holiday: true
+      is_half_day_holiday: false
+      is_covid_restriction: false
+      is_partial_covid_restriction: false
+      has_special_event: false
+    - ride_date: '2024-01-10'
+      event_types: fixture
+      labels: Label
+      is_holiday: false
+      is_half_day_holiday: false
+      is_covid_restriction: true
+      is_partial_covid_restriction: false
+      has_special_event: false
+    - ride_date: '2023-12-28'
+      event_types: null
+      labels: null
+      is_holiday: false
+      is_half_day_holiday: false
+      is_covid_restriction: true
+      is_partial_covid_restriction: false
+      has_special_event: false
+  expect:
+    rows:
+    - ride_date: '2024-01-01'
+      anomaly: drop
+      calendar_explanation: covid_restriction
+      calendar_labels: Label
+      calendar_event_types: fixture
+      baseline_restricted_days: 0
+    - ride_date: '2024-01-02'
+      anomaly: drop
+      calendar_explanation: covid_restriction
+      calendar_labels: Label
+      calendar_event_types: fixture
+      baseline_restricted_days: 0
+    - ride_date: '2024-01-03'
+      anomaly: drop
+      calendar_explanation: holiday
+      calendar_labels: Label
+      calendar_event_types: fixture
+      baseline_restricted_days: 0
+    - ride_date: '2024-01-04'
+      anomaly: spike
+      calendar_explanation: special_event
+      calendar_labels: Label
+      calendar_event_types: fixture
+      baseline_restricted_days: 1
+    - ride_date: '2024-01-05'
+      anomaly: none
+      calendar_explanation: null
+      calendar_labels: Label
+      calendar_event_types: fixture
+      baseline_restricted_days: 0
+    - ride_date: '2024-01-06'
+      anomaly: drop
+      calendar_explanation: unexplained
+      calendar_labels: null
+      calendar_event_types: null
+      baseline_restricted_days: 0
+    - ride_date: '2024-01-07'
+      anomaly: spike
+      calendar_explanation: unexplained
+      calendar_labels: null
+      calendar_event_types: null
+      baseline_restricted_days: 0
+    - ride_date: '2024-01-12'
+      anomaly: spike
+      calendar_explanation: unexplained
+      calendar_labels: Label
+      calendar_event_types: fixture
+      baseline_restricted_days: 0
+    - ride_date: '2024-01-09'
+      anomaly: drop
+      calendar_explanation: holiday
+      calendar_labels: Label
+      calendar_event_types: fixture
+      baseline_restricted_days: 0
+    - ride_date: '2024-01-10'
+      anomaly: no_baseline
+      calendar_explanation: null
+      calendar_labels: Label
+      calendar_event_types: fixture
+      baseline_restricted_days: 0
+- name: test_anomaly_baseline_minus_7
+  model: int_daily_volume_anomaly_calendar
+  given:
+  - input: ref('int_daily_volume_anomaly')
+    rows:
+    - ride_date: '2024-07-01'
+      scope: system
+      line_name: '*'
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+      baseline_journeys: 100
+      baseline_weeks: 8
+      ratio_to_baseline: 1.0
+      ratio_estimated_to_baseline: 1.0
+      anomaly: spike
+  - input: ref('int_calendar_day')
+    rows:
+    - ride_date: '2024-06-24'
+      event_types: null
+      labels: null
+      is_holiday: false
+      is_half_day_holiday: false
+      is_covid_restriction: true
+      is_partial_covid_restriction: false
+      has_special_event: false
+  expect:
+    rows:
+    - ride_date: '2024-07-01'
+      baseline_restricted_days: 1
+      calendar_explanation: baseline_restricted
+- name: test_anomaly_baseline_minus_56
+  model: int_daily_volume_anomaly_calendar
+  given:
+  - input: ref('int_daily_volume_anomaly')
+    rows:
+    - ride_date: '2024-07-01'
+      scope: system
+      line_name: '*'
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+      baseline_journeys: 100
+      baseline_weeks: 8
+      ratio_to_baseline: 1.0
+      ratio_estimated_to_baseline: 1.0
+      anomaly: spike
+  - input: ref('int_calendar_day')
+    rows:
+    - ride_date: '2024-05-06'
+      event_types: null
+      labels: null
+      is_holiday: false
+      is_half_day_holiday: false
+      is_covid_restriction: true
+      is_partial_covid_restriction: false
+      has_special_event: false
+  expect:
+    rows:
+    - ride_date: '2024-07-01'
+      baseline_restricted_days: 1
+      calendar_explanation: baseline_restricted
+- name: test_anomaly_baseline_minus_63
+  model: int_daily_volume_anomaly_calendar
+  given:
+  - input: ref('int_daily_volume_anomaly')
+    rows:
+    - ride_date: '2024-07-01'
+      scope: system
+      line_name: '*'
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+      baseline_journeys: 100
+      baseline_weeks: 8
+      ratio_to_baseline: 1.0
+      ratio_estimated_to_baseline: 1.0
+      anomaly: spike
+  - input: ref('int_calendar_day')
+    rows:
+    - ride_date: '2024-04-29'
+      event_types: null
+      labels: null
+      is_holiday: false
+      is_half_day_holiday: false
+      is_covid_restriction: true
+      is_partial_covid_restriction: false
+      has_special_event: false
+  expect:
+    rows:
+    - ride_date: '2024-07-01'
+      baseline_restricted_days: 0
+      calendar_explanation: unexplained
+- name: test_anomaly_baseline_other_weekday
+  model: int_daily_volume_anomaly_calendar
+  given:
+  - input: ref('int_daily_volume_anomaly')
+    rows:
+    - ride_date: '2024-07-01'
+      scope: system
+      line_name: '*'
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+      baseline_journeys: 100
+      baseline_weeks: 8
+      ratio_to_baseline: 1.0
+      ratio_estimated_to_baseline: 1.0
+      anomaly: spike
+  - input: ref('int_calendar_day')
+    rows:
+    - ride_date: '2024-06-25'
+      event_types: null
+      labels: null
+      is_holiday: false
+      is_half_day_holiday: false
+      is_covid_restriction: true
+      is_partial_covid_restriction: false
+      has_special_event: false
+  expect:
+    rows:
+    - ride_date: '2024-07-01'
+      baseline_restricted_days: 0
+      calendar_explanation: unexplained
+- name: test_anomaly_baseline_partial_excluded
+  model: int_daily_volume_anomaly_calendar
+  given:
+  - input: ref('int_daily_volume_anomaly')
+    rows:
+    - ride_date: '2024-07-01'
+      scope: system
+      line_name: '*'
+      journey_count: 100
+      journey_count_estimated: 100
+      has_suspect_journeys: false
+      baseline_journeys: 100
+      baseline_weeks: 8
+      ratio_to_baseline: 1.0
+      ratio_estimated_to_baseline: 1.0
+      anomaly: spike
+  - input: ref('int_calendar_day')
+    rows:
+    - ride_date: '2024-06-17'
+      event_types: null
+      labels: null
+      is_holiday: false
+      is_half_day_holiday: false
+      is_covid_restriction: false
+      is_partial_covid_restriction: true
+      has_special_event: false
+  expect:
+    rows:
+    - ride_date: '2024-07-01'
+      baseline_restricted_days: 0
+      calendar_explanation: unexplained
