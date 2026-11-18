@@ -239,7 +239,7 @@ unit_tests:
     - ride_date: '2024-01-02'
       event_types: fixture
       labels: Label
-      is_holiday: true
+      is_holiday: false
       is_half_day_holiday: false
       is_covid_restriction: false
       is_partial_covid_restriction: true
@@ -310,7 +310,7 @@ unit_tests:
       baseline_restricted_days: 0
     - ride_date: '2024-01-02'
       anomaly: drop
-      calendar_explanation: covid_restriction
+      calendar_explanation: unexplained
       calendar_labels: Label
       calendar_event_types: fixture
       baseline_restricted_days: 0

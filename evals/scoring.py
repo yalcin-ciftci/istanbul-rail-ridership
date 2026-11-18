@@ -19,6 +19,7 @@ class Number:
     value: float
     precision: float = 0
     year: bool = False
+    date_part: bool = False
 
 
 TOKEN = re.compile(
@@ -31,7 +32,14 @@ TOKEN = re.compile(
 def extract_numbers(answer: str) -> list[Number]:
     """Read localized quantities, retaining the precision of scaled forms."""
     result = []
-    # Keep date components available without treating a dotted date as a decimal.
+    date_spans = [
+        match.span()
+        for match in re.finditer(
+            r"\b(?:\d{4}-\d{2}-\d{2}|\d{4}\.\d{2}\.\d{2}|\d{1,2}\.\d{1,2}\.\d{4})\b",
+            answer,
+        )
+    ]
+    # Replace separators without shifting offsets, retaining date provenance.
     answer = re.sub(
         r"\b(?:\d{4}-\d{2}-\d{2}|\d{4}\.\d{2}\.\d{2}|\d{1,2}\.\d{1,2}\.\d{4})\b",
         lambda match: re.sub(r"[.-]", "/", match.group()),
@@ -73,6 +81,7 @@ def extract_numbers(answer: str) -> list[Number]:
                 value,
                 scale * 10 ** (-decimals) / 2 if scale_match else 0,
                 not scale_match and not separators and 1900 <= value <= 2100,
+                any(start <= match.start() < end for start, end in date_spans),
             )
         )
     return result
@@ -98,6 +107,8 @@ def _number_matches_sentence(
     # "Artık yıl" describes leap-year coverage, not an increase.
     increasing = re.search(r"\bart(?!ık\b)|\byüksel", answer, re.IGNORECASE) is not None
     for number in extract_numbers(answer):
+        if number.date_part:
+            continue
         if number.year and not 1900 <= expected <= 2100:
             continue
         tolerance = max(0.005 * abs(expected), 0.5, number.precision)
@@ -125,6 +136,8 @@ def _no_large_numbers(answer: str) -> bool:
 
 
 def _refusal_checks(answer: str, reference: dict) -> list[dict]:
+    heading = re.search(r"\*\*Nasıl hesaplandı", answer, re.IGNORECASE)
+    answer_section = answer[: heading.start()] if heading else answer[:600]
     dates = []
     for row in reference["rows"]:
         for value in row:
@@ -162,7 +175,11 @@ def _refusal_checks(answer: str, reference: dict) -> list[dict]:
         ),
         _check(
             "refusal_text",
-            re.search(r"(?i)kapsam|yok|bulunmuyor|içermiyor", answer) is not None,
+            re.search(
+                r"(?i)kapsam dışı|kapsamında değil|kapsamın(ın)? dışında|yok|bulunmuyor|bulunmamakta|içermiyor|söyleyemi|veremi",
+                answer_section,
+            )
+            is not None,
             "Kapsam dışı red ifadesi",
         ),
         _check(
@@ -174,7 +191,11 @@ def _refusal_checks(answer: str, reference: dict) -> list[dict]:
 
 
 def score_answer(
-    case: dict, answer: str, reference: dict, data_version: str
+    case: dict,
+    answer: str,
+    reference: dict,
+    data_version: str,
+    hourly_version: str | None = None,
 ) -> list[dict]:
     """Return a separate result for every required number, regex and rule check."""
     checks = []
@@ -211,6 +232,16 @@ def score_answer(
                 "data_version",
                 bool(data_version) and data_version in answer,
                 f"Beklenen veri sürümü: {data_version}",
+            )
+        )
+    if case.get("require_hourly_version", False):
+        checks.append(
+            _check(
+                "hourly_version",
+                bool(hourly_version) and hourly_version in answer,
+                f"Beklenen saatlik veri sürümü: {hourly_version}"
+                if hourly_version
+                else "golden'da saatlik_veri_surumu yok",
             )
         )
     return checks

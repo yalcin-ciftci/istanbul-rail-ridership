@@ -255,7 +255,8 @@ SELECT (SELECT ride_hour FROM profile ORDER BY typical_passage DESC, ride_hour L
        (SELECT relative_index * 100 FROM profile WHERE ride_hour = 8) AS intensity_percentage
 """
 numbers = ["peak_hour", "intensity_percentage"]
-must_mention = ["(?i)tipik|medyan|turnike"]
+must_mention = ["(?i)tipik|medyan", "(?i)turnike"]
+require_hourly_version = true
 must_not_mention = []
 rules = ["hourly_typical", "hourly_reliability", "hourly_scope", "hourly_relative"]
 refusal = false

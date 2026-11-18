@@ -9,12 +9,16 @@ unit_tests:
           - {station_group: few_high, baseline_days: 19, peak_reference: 50}
           - {station_group: low, baseline_days: 20, peak_reference: 49}
           - {station_group: reliable, baseline_days: 20, peak_reference: 50}
+          - {station_group: zero, baseline_days: 20, peak_reference: 0, relative_index: null, band: null}
+          - {station_group: fractional, baseline_days: 20, peak_reference: 49.5}
     expect:
       rows:
-        - {station_group: few_low, reliability: few_days}
-        - {station_group: few_high, reliability: few_days}
-        - {station_group: low, reliability: low_volume}
-        - {station_group: reliable, reliability: ok}
+        - {station_group: few_low, reliability: few_days, relative_index: null, band: null}
+        - {station_group: few_high, reliability: few_days, relative_index: null, band: null}
+        - {station_group: low, reliability: low_volume, relative_index: null, band: null}
+        - {station_group: reliable, reliability: ok, relative_index: null, band: null}
+        - {station_group: zero, reliability: low_volume, relative_index: null, band: null}
+        - {station_group: fractional, reliability: low_volume, relative_index: null, band: null}
 models:
 - name: mart_station_group_hour_profile
   description: 'İstasyon grubu × gün tipi × saat için tipik göreli yoğunluk; turnike
@@ -67,6 +71,7 @@ models:
           - 21
           - 22
           - 23
+          quote: false
   - name: typical_passage
     description: Median hourly turnstile passages on baseline days, with missing hours
       filled with zero; baseline 2023-01-01 to 2024-07-31, holidays not separated.
@@ -116,6 +121,9 @@ models:
           - low_volume
           - ok
   data_tests:
+  - unique:
+      arguments:
+        column_name: "struct_pack(station_group := station_group, day_type := day_type, ride_hour := ride_hour)"
   - accepted_values:
       name: mart_hour_profile_relative_index_range
       arguments:

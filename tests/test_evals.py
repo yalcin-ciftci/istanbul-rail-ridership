@@ -116,8 +116,6 @@ def test_sql_rejects_non_marts_and_non_select(sql):
         ("217k", 217000),
         ("1.234,56", 1234.56),
         ("1,234.56", 1234.56),
-        ("2025-12-31", 2025),
-        ("31.12.2025", 2025),
     ],
 )
 def test_number_formats(answer, expected):
@@ -165,7 +163,7 @@ def evaluate(answer, **overrides):
     "answer, ok",
     [
         ("Kapsam sonu 2025-12-31, dün yok.", True),
-        ("Kapsam sonu 31.12.2025.", True),
+        ("Kapsam sonu 31.12.2025.", False),
         ("31 Aralık 2025 sonrası bulunmuyor.", True),
         ("Kapsam sonu 2025-12-31, 123456 yolculuk.", False),
         ("Kapsam sonu 2025-12-31, 123.456 yolculuk.", False),
@@ -175,6 +173,121 @@ def evaluate(answer, **overrides):
 )
 def test_refusal(answer, ok):
     assert all(check["ok"] for check in evaluate(answer, refusal=True)) is ok
+
+
+@pytest.mark.parametrize("heading", ["**Nasıl hesaplandı", "**NASIL HESAPLANDI"])
+def test_refusal_footer_cannot_supply_refusal(heading):
+    answer = (
+        "**Cevap:** 2024-05-15 08:00'de Yenikapı'da 18.540 kişi geçti.\n"
+        f"{heading}:** SQL\nKapsam dışı değildir.\n"
+        "**Veri kapsamı:** 2021-01-01–2025-12-31."
+    )
+    checks = {c["check"]: c["ok"] for c in evaluate(answer, refusal=True)}
+    assert checks == {
+        "refusal_date": True,
+        "refusal_text": False,
+        "refusal_number": True,
+    }
+
+
+def test_refusal_accepts_soyleyemiyorum_in_answer():
+    assert all(
+        c["ok"]
+        for c in evaluate(
+            "**Cevap:** Bunu söyleyemiyorum.\n**Nasıl hesaplandı:** Sorgu çalıştırılmadı.\n"
+            "**Son tarih:** 2025-12-31.",
+            refusal=True,
+        )
+    )
+
+
+def test_refusal_without_heading_limits_search_to_600_characters():
+    checks = evaluate("2025-12-31 " + "a " * 300 + "yok", refusal=True)
+    assert not next(c["ok"] for c in checks if c["check"] == "refusal_text")
+
+
+@pytest.mark.parametrize(
+    "text, parts",
+    [
+        ("2026-11-18", (2026, 11, 18)),
+        ("2026.11.18", (2026, 11, 18)),
+        ("18.11.2026", (2026, 11, 18)),
+        ("2025-12-31", (2025, 12, 31)),
+        ("31.12.2025", (2025, 12, 31)),
+    ],
+)
+def test_date_parts_never_match_expected_numbers(text, parts):
+    scoring = implementation("scoring")
+    for expected in parts:
+        assert not scoring.number_matches(text, expected)
+    assert all(n.date_part for n in scoring.extract_numbers(text))
+    assert scoring.number_matches(text + " tepe saat 18", 18)
+
+
+@pytest.mark.parametrize(
+    "version, answer, ok",
+    [
+        ("missing", "tipik turnike", False),
+        (None, "tipik turnike", False),
+        ("", "tipik turnike", False),
+        ("hourly123", "tipik turnike daily123", False),
+        ("hourly123", "tipik turnike hourly123", True),
+    ],
+)
+def test_hourly_version_scored_through_golden(version, answer, ok, tmp_path):
+    runner = implementation("run_eval")
+    golden_file = tmp_path / "golden.json"
+    payload = {
+        "veri_surumu": "daily123",
+        "cases": {"profile": {"columns": [], "rows": []}},
+    }
+    if version != "missing":
+        payload["saatlik_veri_surumu"] = version
+    golden_file.write_text(json.dumps(payload), encoding="utf-8")
+    (tmp_path / "profile.md").write_text(answer, encoding="utf-8")
+    assert runner.score(
+        [{"id": "profile", "require_hourly_version": True}], tmp_path, golden_file
+    ) == (0 if ok else 2)
+    result = json.loads((tmp_path / "score.json").read_text("utf-8"))
+    check = result["cases"]["profile"]["checks"][0]
+    assert check["check"] == "hourly_version"
+    if not version or version == "missing":
+        assert check["detail"] == "golden'da saatlik_veri_surumu yok"
+
+
+@pytest.mark.parametrize("has_hourly", [False, True])
+def test_golden_writes_hourly_identity(fixture_eval, monkeypatch, has_hourly):
+    runner = implementation("run_eval")
+    db, cases, golden_dir, _ = fixture_eval
+    if has_hourly:
+        with duckdb.connect(str(db)) as con:
+            con.execute(
+                "INSERT INTO marts.dim_source_version VALUES ('rail_hourly', 'h', '2024-01', 'hash', 'stored', '2026-01-02')"
+            )
+    monkeypatch.setattr(runner, "GOLDEN_DIR", golden_dir)
+    assert runner.main(["golden", "--db", str(db), "--cases", str(cases)]) == 0
+    payload = json.loads(next(golden_dir.glob("*.json")).read_text("utf-8"))
+    assert payload["saatlik_veri_surumu"] == ("7926870d2d1a" if has_hourly else None)
+
+
+@pytest.mark.parametrize(
+    "answer, ok",
+    [
+        ("turnike", False),
+        ("tipik", False),
+        ("medyan turnike", True),
+        ("tipik turnike", True),
+    ],
+)
+def test_hourly_profile_requires_typical_and_turnstile(answer, ok):
+    runner = implementation("run_eval")
+    case = next(
+        c
+        for c in runner.load_cases(ROOT / "evals/cases.toml")
+        if c["id"] == "hourly_profile_yenikapi"
+    )
+    checks = evaluate(answer, must_mention=case["must_mention"])
+    assert all(c["ok"] for c in checks) is ok
 
 
 @pytest.mark.parametrize(
@@ -746,7 +859,7 @@ def test_review_direction_sentence(answer, ok):
 def test_review_dates_and_identifiers_not_large(text):
     checks = implementation("scoring").score_answer(
         {"forbid_large_numbers": True, "refusal": True},
-        f"Veri kapsamı 2025-12-31; {text}; istasyon bulunamadı.",
+        f"Veri kapsamı 2025-12-31; {text}; istasyon bulunmuyor.",
         {"columns": ["last"], "rows": [["2025-12-31"]]},
         "v",
     )
@@ -770,7 +883,9 @@ def test_review_preserves_quantity_forms(text, want):
     )
 
 
-@pytest.mark.parametrize("field", ["signed_by_words", "forbid_large_numbers"])
+@pytest.mark.parametrize(
+    "field", ["signed_by_words", "forbid_large_numbers", "require_hourly_version"]
+)
 def test_review_rejects_string_boolean(tmp_path, field):
     text = (ROOT / "evals/cases.toml").read_text("utf-8")
     text = text.replace("[[case]]", f'[[case]]\n{field} = "false"', 1)

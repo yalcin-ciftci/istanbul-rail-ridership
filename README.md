@@ -6,7 +6,7 @@ Istanbul rail ridership from IBB Open Data, transformed with DuckDB and dbt and 
 
 ## What you can ask
 
-The [Claude Code agent example](examples/claude-code/ulasim.md) supports questions about the busiest station complexes, monthly line trends, and weekday/weekend differences. It resolves specific station names mentioned in a question before querying; general rankings query station groups directly. It answers in Turkish with the SQL and data coverage. Questions about yesterday or hourly traffic are outside its coverage.
+The [Claude Code agent example](examples/claude-code/ulasim.md) supports questions about the busiest station complexes, monthly line trends, and weekday/weekend differences. It resolves specific station names mentioned in a question before querying; general rankings query station groups directly. It answers in Turkish with the SQL and data coverage. Typical hourly intensity profiles based on 2023-01–2024-07 are supported; counts for a specific date and hour, and questions about yesterday, are outside its coverage.
 
 Acceptance questions for v0.1, answered by the agent and re-checked with independent SQL ([full results](docs/M3.md#results-2026-11-15)):
 
@@ -49,6 +49,7 @@ The machine-readable [metric contract](metrics/metrics.toml) defines the measure
 | `fct_station_daily` | date × station code × line | `ride_date`, `station_code`, `line_name`; journey/passenger counts, `entrance_rows`, estimate and suspect flag |
 | `fct_line_daily` | date × line, including rows without a station | `ride_date`, `line_name`; journey/passenger counts, `station_count`, line-level flag, estimate and suspect flag |
 | `fct_station_group_daily` | date × physical station complex | `ride_date`, `station_group`; journey/passenger sums, estimate, suspect flag, `line_count` |
+| `marts.fct_station_group_hour_profile` | station group × day type × hour | `station_group`, `day_type`, `ride_hour`; typical turnstile passages, relative index, band, baseline days and `reliability` |
 
 The intermediate views are described in [_intermediate.yml](transform/models/intermediate/_intermediate.yml):
 
@@ -232,7 +233,7 @@ $prompt | claude -p --model sonnet --mcp-config .mcp.json --strict-mcp-config `
 
 ## Limitations
 
-- Daily observations only; no hourly traffic.
+- Daily observations and typical hourly intensity profiles (2023-01–2024-07 baseline); no counts for a specific date and hour or for yesterday.
 - Historical coverage ends on 2025-12-31; no live service or ridership data.
 - This is an analytical tool, not a trip planner.
 - The source district field is unreliable.

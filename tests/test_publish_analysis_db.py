@@ -207,3 +207,94 @@ def test_catalog_comments_are_literal_and_uncommented_objects_stay_null(tmp_path
 def test_comment_literal_rejects_nul():
     with pytest.raises(ValueError, match="NUL"):
         load_publisher()._comment_literal("invalid\x00comment")
+
+
+def test_view_and_column_comments_preserve_backslashes_and_newlines(tmp_path):
+    source, target = tmp_path / "source.duckdb", tmp_path / "analysis.duckdb"
+    make_source(source)
+    comment = "İBB'nin \\kaynak\\yorumu\nİkinci satır"
+    literal = "'" + comment.replace("'", "''") + "'"
+    with duckdb.connect(str(source)) as con:
+        con.execute('COMMENT ON VIEW marts."a""b" IS ' + literal)
+        con.execute('COMMENT ON COLUMN marts."a""b".value IS ' + literal)
+    assert load_publisher().publish(source, target) == 3
+    with duckdb.connect(str(target), read_only=True) as con:
+        assert con.execute(
+            "SELECT comment FROM duckdb_tables() WHERE schema_name = 'marts' AND table_name = ?",
+            ['a"b'],
+        ).fetchone() == (comment,)
+        assert con.execute(
+            "SELECT comment FROM duckdb_columns() WHERE schema_name = 'marts' AND table_name = ?",
+            ['a"b'],
+        ).fetchone() == (comment,)
+
+
+def test_nul_catalog_comment_preserves_target_and_cleans_tmp(tmp_path, capsys):
+    publisher = load_publisher()
+    source, target = tmp_path / "source.duckdb", tmp_path / "analysis.duckdb"
+    make_source(source)
+    comment = "invalid\x00comment"
+    with duckdb.connect(str(source)) as con:
+        con.execute("COMMENT ON TABLE marts.empty IS 'invalid\x00comment'")
+        assert con.execute(
+            "SELECT comment FROM duckdb_tables() WHERE schema_name = 'marts' AND table_name = 'empty'"
+        ).fetchone() == (comment,)
+    target.write_bytes(b"previous target")
+    original = target.read_bytes()
+    assert publisher.main(["--source", str(source), "--target", str(target)]) == 1
+    assert "NUL" in capsys.readouterr().err
+    assert target.read_bytes() == original
+    assert not Path(str(target) + ".tmp").exists()
+
+
+@pytest.mark.parametrize("catalog", ["tables", "views", "columns"])
+def test_publish_ignores_internal_catalog_comments(tmp_path, monkeypatch, catalog):
+    publisher = load_publisher()
+    source, target = tmp_path / "source.duckdb", tmp_path / "analysis.duckdb"
+    make_source(source)
+    connect = publisher.duckdb.connect
+
+    class CatalogConnection:
+        def __init__(self, con):
+            self.con = con
+
+        def __enter__(self):
+            self.con.__enter__()
+            return self
+
+        def __exit__(self, *args):
+            return self.con.__exit__(*args)
+
+        def execute(self, sql, *args):
+            # Catalog fixtures are evaluated by DuckDB, so WHERE conditions
+            # really filter the injected internal object, including its columns.
+            if (
+                "SELECT table_name, comment" in sql
+                or "SELECT table_name, column_name, comment" in sql
+            ):
+                name_column = "view_name" if catalog == "views" else "table_name"
+                function = f"duckdb_{catalog}()"
+                fixture = (
+                    f"(SELECT * FROM {function} UNION ALL SELECT * REPLACE "
+                    f"('unpublished' AS {name_column}, true AS internal, "
+                    f"'internal comment' AS comment) FROM {function} "
+                    "WHERE database_name = 'src' AND schema_name = 'marts')"
+                )
+                sql = sql.replace(function, fixture)
+            self.con.execute(sql, *args)
+            return self
+
+        def fetchall(self):
+            return self.con.fetchall()
+
+        def fetchone(self):
+            return self.con.fetchone()
+
+    monkeypatch.setattr(
+        publisher.duckdb,
+        "connect",
+        lambda *a, **kw: CatalogConnection(connect(*a, **kw)),
+    )
+    assert publisher.publish(source, target) == 3
+    with connect(str(target), read_only=True) as con:
+        assert con.execute("SELECT count(*) FROM marts.empty").fetchone() == (0,)

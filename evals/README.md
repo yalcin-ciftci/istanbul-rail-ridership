@@ -76,9 +76,19 @@ Scoring checks required numeric values anywhere in the answer with 0.5% toleranc
 (minimum 0.5), widened for rounded scaled quantities. It checks regexes, coverage
 refusals and exact version citations. It does not verify tool calls, SQL execution
 by the agent, or associate each number with a particular station or month.
-Year/date components cannot satisfy quantities outside 1900–2100. Refusals must
-cite the latest coverage date and contain no quantity of six or more digits.
+Standalone years cannot satisfy quantities outside 1900–2100; components of
+YYYY-MM-DD, YYYY.MM.DD and DD.MM.YYYY dates never match expected numbers.
+Refusals must cite the latest coverage date and contain no quantity of six or more digits.
+The refusal phrase is searched only before the first case-insensitive
+`**Nasıl hesaplandı` heading, or in the first 600 characters if it is absent;
+the coverage footer alone does not establish refusal.
 The refusal date check is automatic; it needs no hard-coded `must_mention` date.
+
+`golden` also records the top-level `saatlik_veri_surumu` from MCP's
+`saatlik_kimlik` (null without hourly sources). Optional case field
+`require_hourly_version = true` adds an `hourly_version` check requiring that
+nonempty identity verbatim in the answer; missing/null golden identity fails.
+`hourly_profile_yenikapi` requires it, plus separate typical/median and turnstile phrases.
 
 The four additional cases check a nonexistent station, ambiguous Yenimahalle
 groups, unavailable hourly traffic, and M2's 2025 versus 2024 percentage change.

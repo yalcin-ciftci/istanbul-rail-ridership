@@ -46,17 +46,21 @@ def publish(source: Path, target: Path) -> int:
                     f"No marts tables or views in source database: {source}"
                 )
             con.execute("CREATE SCHEMA marts")
+            object_names = [name for (name,) in objects]
             comments = con.execute(
                 "SELECT table_name, comment FROM duckdb_tables() "
-                "WHERE database_name = ? AND schema_name = ? "
+                "WHERE database_name = ? AND schema_name = ? AND NOT internal "
+                "AND table_name IN (SELECT unnest(?)) "
                 "UNION ALL SELECT view_name, comment FROM duckdb_views() "
-                "WHERE database_name = ? AND schema_name = ?",
-                ["src", "marts", "src", "marts"],
+                "WHERE database_name = ? AND schema_name = ? AND NOT internal "
+                "AND view_name IN (SELECT unnest(?))",
+                ["src", "marts", object_names, "src", "marts", object_names],
             ).fetchall()
             column_comments = con.execute(
                 "SELECT table_name, column_name, comment FROM duckdb_columns() "
-                "WHERE database_name = ? AND schema_name = ? AND comment IS NOT NULL",
-                ["src", "marts"],
+                "WHERE database_name = ? AND schema_name = ? AND NOT internal "
+                "AND table_name IN (SELECT unnest(?)) AND comment IS NOT NULL",
+                ["src", "marts", object_names],
             ).fetchall()
             for (name,) in objects:
                 identifier = _identifier(name)

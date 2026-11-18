@@ -34,7 +34,7 @@ select
     case
         when a.anomaly not in ('spike', 'drop') then null
         when a.anomaly = 'drop'
-            and (c.is_covid_restriction or c.is_partial_covid_restriction)
+            and c.is_covid_restriction
             then 'covid_restriction'
         when a.anomaly = 'drop' and (c.is_holiday or c.is_half_day_holiday)
             then 'holiday'

@@ -2,8 +2,7 @@ version: 2
 seeds:
 - name: calendar_events
   description: Doğrulanmış tatil/kısıtlama/etkinlik takvimi; intermediate şemasında kalır, analiz kopyasına
-    ve MCP ajanına açılmaz. 2021 hafta sonu ve akşam sokağa çıkma kısıtlamaları (Ocak–Haziran 2021) birincil
-    kaynakla doğrulanamadığı için yok; yalnız 29.04–17.05.2021 tam kapanma var.
+    ve MCP ajanına açılmaz. 2021 kısıtlamaları İçişleri genelgelerinden (20076, 20856, 3514, 5673, 6638, 7377, 7576, 8160, 8878, 10530) eklendi; hafta sonu satırları haftalık kuralın takvime açılımıdır; hafta içi gece aralıkları hafta sonu günlerini de kapsayan aralık olarak yazıldı, aynı gündeki tam gün satırı önceliklidir. Kaynak URL'ler genelgelerin kurum sunucularındaki kopyalarıdır.
   columns:
   - name: start_date
     description: Etkinliğin ilk günü; dahil.
@@ -140,7 +139,7 @@ models:
           - 8
           quote: false
   - name: calendar_explanation
-    description: 'Öncelik: spike/drop dışı NULL; drop + tam/kısmi kısıtlama; drop + tam/kısmi tatil; spike
+    description: 'Öncelik: spike/drop dışı NULL; drop + yalnız tam gün kısıtlama; drop + tam/kısmi tatil; spike
       + özel etkinlik; spike + kısıtlı taban; kalan spike/drop unexplained.'
     data_tests:
     - accepted_values:

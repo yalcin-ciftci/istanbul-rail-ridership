@@ -1,6 +1,8 @@
 """Hourly version identity and query provenance, without production data."""
 
 import hashlib
+import os
+import subprocess
 import tomllib
 from pathlib import Path
 
@@ -9,6 +11,46 @@ import pytest
 from test_ulasim_mcp import load_server
 
 server = load_server()
+
+
+def test_mart_build_rejects_duplicate_hour_grain(tmp_path):
+    root = Path(__file__).resolve().parents[1]
+    db = tmp_path / "duplicates.duckdb"
+    with duckdb.connect(str(db)) as con:
+        con.execute("CREATE SCHEMA hourly")
+        con.execute(
+            "CREATE TABLE hourly.fct_station_group_hour_profile AS "
+            "SELECT 'Yenikapı' AS station_group, 'weekday' AS day_type, "
+            "8::SMALLINT AS ride_hour, 50::DOUBLE AS typical_passage, "
+            "50::DOUBLE AS peak_reference, 1::DOUBLE AS relative_index, "
+            "'busy' AS band, 20::BIGINT AS baseline_days, "
+            "DATE '2023-01-01' AS baseline_start, DATE '2024-07-31' AS baseline_end "
+            "FROM range(2)"
+        )
+    result = subprocess.run(
+        [
+            "uv",
+            "run",
+            "--offline",
+            "dbt",
+            "build",
+            "--project-dir",
+            "transform",
+            "--profiles-dir",
+            "transform",
+            "--select",
+            "mart_station_group_hour_profile",
+        ],
+        cwd=root,
+        env={**os.environ, "ULASIM_DUCKDB_PATH": str(db), "PYTHONUTF8": "1"},
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
+    )
+    assert result.returncode != 0, result.stdout + result.stderr
+    assert "in test unique_" in result.stdout, result.stdout + result.stderr
+    assert "Got 1 result" in result.stdout
 
 
 @pytest.fixture
@@ -32,6 +74,46 @@ def test_hourly_version_absent_is_null_and_daily_identity_unchanged(versions):
     assert version["kimlik"] == hashlib.sha256(b"daily||dailyhash").hexdigest()[:12]
     assert version["saatlik_kimlik"] is None
     assert version["saatlik_kaynak_sayisi"] is None
+
+
+@pytest.mark.parametrize(
+    "name, hourly",
+    [
+        ("fct_station_group_hour_profile_v2", False),
+        ("FCT_STATION_GROUP_HOUR_PROFILE", True),
+        ('"fct_station_group_hour_profile"', True),
+    ],
+)
+def test_profile_detection_uses_whole_identifier(versions, monkeypatch, name, hourly):
+    versions.execute(f"CREATE TABLE marts.{name} AS SELECT 8 AS ride_hour")
+    monkeypatch.setattr(server, "_with_connection", lambda action: action(versions))
+    result = server.sorgu(f"SELECT ride_hour FROM marts.{name}")
+    assert result["satirlar"] == [[8]]
+    assert ("saatlik_veri_surumu" in result) is hourly
+
+
+def test_sema_exposes_hourly_source_identity(versions, monkeypatch):
+    versions.execute(
+        "INSERT INTO marts.dim_source_version VALUES ('rail_hourly', 'h', '2024-01', 'hash', 'stored', '2026-01-02')"
+    )
+    monkeypatch.setattr(server, "_with_connection", lambda action: action(versions))
+    version = server.sema()["veri_surumu"]
+    assert (
+        version["saatlik_kimlik"] == hashlib.sha256(b"h|2024-01|hash").hexdigest()[:12]
+    )
+    assert version["saatlik_kaynak_sayisi"] == 1
+
+
+def test_profile_without_version_table_still_returns_rows(versions, monkeypatch):
+    versions.execute("DROP TABLE marts.dim_source_version")
+    versions.execute(
+        "CREATE TABLE marts.fct_station_group_hour_profile AS SELECT 8 AS ride_hour"
+    )
+    monkeypatch.setattr(server, "_with_connection", lambda action: action(versions))
+    result = server.sorgu("SELECT ride_hour FROM marts.fct_station_group_hour_profile")
+    assert result["satirlar"] == [[8]]
+    assert result["veri_surumu"] is None
+    assert result["saatlik_veri_surumu"] is None
 
 
 def test_hourly_version_sorted_fallback_and_independent_of_daily(versions):

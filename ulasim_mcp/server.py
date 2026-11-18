@@ -4,6 +4,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import sys
 import threading
 import time
@@ -322,7 +323,11 @@ def sorgu(sql: str, satir_siniri: int = 200) -> dict[str, Any]:
             "sure_ms": round((time.perf_counter() - started) * 1000, 3),
             "kesilme_nedeni": reason,
         }
-        if "fct_station_group_hour_profile" in sql.lower():
+        if re.search(
+            r"(?<![A-Za-z0-9_])fct_station_group_hour_profile(?![A-Za-z0-9_])",
+            sql,
+            re.IGNORECASE,
+        ):
             result["saatlik_veri_surumu"] = (
                 version["saatlik_kimlik"] if version is not None else None
             )

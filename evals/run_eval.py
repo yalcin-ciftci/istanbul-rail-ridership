@@ -89,7 +89,12 @@ def load_cases(path: Path) -> list[dict]:
                 isinstance(x, str) for x in case[field]
             ):
                 raise ValueError(f"Geçersiz alan: {case_id}.{field}")
-        for field in ("refusal", "forbid_large_numbers", "signed_by_words"):
+        for field in (
+            "refusal",
+            "forbid_large_numbers",
+            "signed_by_words",
+            "require_hourly_version",
+        ):
             if field in case and not isinstance(case[field], bool):
                 raise TypeError(f"Geçersiz {field}: {case_id}")
         if "number_rows" in case and (
@@ -144,6 +149,7 @@ def golden(cases: list[dict], db: Path) -> int:
         json.dumps(
             {
                 "veri_surumu": version["kimlik"],
+                "saatlik_veri_surumu": version.get("saatlik_kimlik"),
                 "olusturma": datetime.now(UTC).isoformat(),
                 "cases": references,
             },
@@ -183,6 +189,7 @@ def _answer_checks(case: dict, path: Path, reference: dict) -> list[dict]:
         path.read_text("utf-8"),
         reference["cases"][case["id"]],
         reference["veri_surumu"],
+        reference.get("saatlik_veri_surumu"),
     )
 
 
