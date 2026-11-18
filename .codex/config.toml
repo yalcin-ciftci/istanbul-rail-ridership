@@ -3,3 +3,7 @@
 [agents.reviewer]
 description = "Read-only milestone reviewer: correctness, data integrity, regressions, missing tests, security."
 config_file = "agents/reviewer.toml"
+
+[mcp_servers.chrome-devtools]
+command = "cmd"
+args = ["/c", "npx", "-y", "chrome-devtools-mcp@1.13.0", "--isolated", "--headless"]
