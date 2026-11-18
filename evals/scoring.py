@@ -135,7 +135,9 @@ def _no_large_numbers(answer: str) -> bool:
     return not any(abs(n.value) >= 100000 for n in extract_numbers(answer))
 
 
-def _refusal_checks(answer: str, reference: dict) -> list[dict]:
+def _refusal_checks(
+    answer: str, reference: dict, allow_numbers: bool = False
+) -> list[dict]:
     heading = re.search(r"\*\*Nasıl hesaplandı", answer, re.IGNORECASE)
     answer_section = answer[: heading.start()] if heading else answer[:600]
     dates = []
@@ -167,7 +169,7 @@ def _refusal_checks(answer: str, reference: dict) -> list[dict]:
             f"{last.day} {months[last.month - 1]} {last.year}",
         ]
     )
-    return [
+    checks = [
         _check(
             "refusal_date",
             any(form.casefold() in answer.casefold() for form in forms),
@@ -176,18 +178,22 @@ def _refusal_checks(answer: str, reference: dict) -> list[dict]:
         _check(
             "refusal_text",
             re.search(
-                r"(?i)kapsam dışı|kapsamında değil|kapsamın(ın)? dışında|yok|bulunmuyor|bulunmamakta|içermiyor|söyleyemi|veremi",
+                r"(?i)kapsam dışı|kapsamında değil|kapsamın(ın)? dışında|yok|bulunmuyor|bulunmamakta|içermiyor|söyleyem|verem",
                 answer_section,
             )
             is not None,
             "Kapsam dışı red ifadesi",
         ),
-        _check(
-            "refusal_number",
-            _no_large_numbers(answer),
-            "Red cevabında altı veya daha çok basamaklı sayı olmamalı",
-        ),
     ]
+    if not allow_numbers:
+        checks.append(
+            _check(
+                "refusal_number",
+                _no_large_numbers(answer),
+                "Red cevabında altı veya daha çok basamaklı sayı olmamalı",
+            )
+        )
+    return checks
 
 
 def score_answer(
@@ -217,7 +223,11 @@ def score_answer(
             found = re.search(pattern, answer) is not None
             checks.append(_check(f"{field}:{pattern}", found == positive, pattern))
     if case.get("refusal", False):
-        checks.extend(_refusal_checks(answer, reference))
+        checks.extend(
+            _refusal_checks(
+                answer, reference, case.get("refusal_allows_numbers", False)
+            )
+        )
     if case.get("forbid_large_numbers", False):
         checks.append(
             _check(

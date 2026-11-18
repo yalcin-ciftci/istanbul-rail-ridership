@@ -218,6 +218,8 @@ must_mention = []
 must_not_mention = []
 rules = []
 refusal = true
+# Belirli saat reddedilir; o günün gerçek günlük toplamını önermek doğru davranıştır.
+refusal_allows_numbers = true
 
 [[case]]
 id = "yoy_percentage_m2"

@@ -81,7 +81,11 @@ YYYY-MM-DD, YYYY.MM.DD and DD.MM.YYYY dates never match expected numbers.
 Refusals must cite the latest coverage date and contain no quantity of six or more digits.
 The refusal phrase is searched only before the first case-insensitive
 `**Nasıl hesaplandı` heading, or in the first 600 characters if it is absent;
-the coverage footer alone does not establish refusal.
+the coverage footer alone does not establish refusal. Negative forms such as
+`veremem`, `veremiyorum` and `söyleyemem` count. A case may set
+`refusal_allows_numbers = true` when a real figure from the data is a legitimate
+alternative (e.g. the day total offered for a refused specific hour); the
+six-digit check is then skipped for that case.
 The refusal date check is automatic; it needs no hard-coded `must_mention` date.
 
 `golden` also records the top-level `saatlik_veri_surumu` from MCP's

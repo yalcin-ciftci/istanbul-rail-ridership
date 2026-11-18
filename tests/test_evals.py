@@ -201,6 +201,30 @@ def test_refusal_accepts_soyleyemiyorum_in_answer():
     )
 
 
+@pytest.mark.parametrize("phrase", ["veremem", "söyleyemem", "veremiyorum"])
+def test_refusal_accepts_negative_aorist_forms(phrase):
+    answer = (
+        f"**Cevap:** Dün için yolcu sayısını {phrase}.\n"
+        "**Nasıl hesaplandı:** Sorgu yok.\n**Son tarih:** 2025-12-31."
+    )
+    assert all(c["ok"] for c in evaluate(answer, refusal=True))
+
+
+def test_refusal_number_can_be_waived_per_case():
+    answer = (
+        "**Cevap:** O saatin sayısını veremiyorum; o günün toplamı 237.285.\n"
+        "**Nasıl hesaplandı:** SQL.\n**Son tarih:** 2025-12-31."
+    )
+    strict = {c["check"]: c["ok"] for c in evaluate(answer, refusal=True)}
+    assert strict["refusal_number"] is False
+    waived = {
+        c["check"]: c["ok"]
+        for c in evaluate(answer, refusal=True, refusal_allows_numbers=True)
+    }
+    assert "refusal_number" not in waived
+    assert all(waived.values())
+
+
 def test_refusal_without_heading_limits_search_to_600_characters():
     checks = evaluate("2025-12-31 " + "a " * 300 + "yok", refusal=True)
     assert not next(c["ok"] for c in checks if c["check"] == "refusal_text")
