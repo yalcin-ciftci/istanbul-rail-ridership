@@ -16,3 +16,7 @@ From [dbt-labs/dbt-agent-skills](https://github.com/dbt-labs/dbt-agent-skills) a
 - `adding-dbt-unit-test/references/warehouse-redshift-data-types.md`
 - `adding-dbt-unit-test/references/warehouse-snowflake-data-types.md`
 - `adding-dbt-unit-test/references/warehouse-spark-data-types.md`
+
+## Removed whole skills
+
+- `impeccable` from [pbakaus/impeccable](https://github.com/pbakaus/impeccable) at commit `d41d9860b0094dcb68030657da63461212835aaa` (Apache-2.0), removed 2026-11-24 together with its license file and commit record. Its first step runs a downloaded engine every session; the engine has telemetry on by default (`impeccable.style/api`), an account/OAuth login, a `live` mode that injects scripts into the page, and hooks that write project files. The same review work is covered by `frontend-design`, the accessibility skills and the chrome-devtools MCP (screenshots, Lighthouse).
