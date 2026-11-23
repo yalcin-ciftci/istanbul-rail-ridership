@@ -1,7 +1,7 @@
 # Read-only reviewer role. Template: affaan-m/ECC .codex/agents/reviewer.toml (MIT, see LICENSE-ECC.txt), adapted.
 # Used at the end of each milestone (not for small tasks), in a fresh session separate from the implementer.
-# Model: gpt-6.1-sol (Astra is not used by default: too costly for routine review).
-model = "gpt-6.1-sol"
+# Model: gpt-6.2-sol since 2026-11-24 (was gpt-6.1-sol; Astra is not used by default: too costly for routine review).
+model = "gpt-6.2-sol"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 

@@ -101,3 +101,7 @@ text_tr = "Yoğunluğu en yoğun saatin %X'i diye anlat: relative_index × 100; 
 [[rule]]
 id = "daily_line_gap"
 text_tr = "Günlük veride bazı hatlar dönem dönem yoktur (ör. M9 2022–2023, M8/F4/havalimanı TCDD hattı 2024 öncesi); bu hat-yıllar `marts.fct_line_daily_gap_year` tablosundadır. Bir hat ya da sistem toplamı bu yılları içeriyorsa veya yıllar arası karşılaştırma yapılıyorsa tabloya bak; eksik hat-yılını ve saatlik veriden alt sınır tahminini (`hourly_passage_in_gap`) cevapta belirt; eksik yılı 0 yolculuk diye sunma; tahmini günlük toplama ekleme."
+
+[[rule]]
+id = "m1_m3_external_reconciliation"
+text_tr = "M1 veya M3 için yıllık toplam ya da büyüme verdiğinde veya kullanıcı bu hatlara ait sonucu resmî rakamlarla ya da Metro İstanbul rakamlarıyla karşılaştırdığında, günlük yolculuk tahminlerinin Metro İstanbul faaliyet raporlarındaki yolcu sayılarından düşük kaldığını belirt (M1'de 2021–2024 her yıl; M3'te 2021, 2023 ve 2024'te, 2022'de yaklaşık eşit). İstasyon kapsamı ve gözlenen günler farkın tamamını açıklamıyor. Raporların aktarmaları nasıl saydığı ve farkın nedeni doğrulanamadı. Farkı eksik yolcu veya hatlar arası yanlış atama olarak yorumlama."
