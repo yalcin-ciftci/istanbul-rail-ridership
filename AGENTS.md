@@ -12,6 +12,7 @@ Instructions for coding agents (Codex) working in this repository. Read fully be
 ## Project
 Istanbul rail ridership pipeline: IBB Open Data (CKAN API) → DuckDB `raw` → dbt staging/marts → read-only MCP tool → agent.
 Milestones and specs: `docs/` (e.g. `docs/M0.md`). Design rationale: README.
+Code map: docs/ARCHITECTURE.md (read before searching the tree).
 
 ## Environment
 - Windows, Python 3.13, dependency manager **uv**. Always run Python through `uv run ...`. The uv cache is project-local (`.uv-cache/`, set in `pyproject.toml`).
